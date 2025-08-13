@@ -1,0 +1,12 @@
+flask
+chromadb
+openai
+python-dotenv
+requests
+datetime
+uuid
+PyPDF2
+gspread
+google-auth
+google-api-python-client
+google-auth-oauthlib

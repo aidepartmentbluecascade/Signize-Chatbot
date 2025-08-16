@@ -162,6 +162,16 @@ When customers complete order tracking and then ask about general sign informati
 
 CRITICAL: If a customer has completed an order issue (provided Order ID and phone number) and then asks about signs, materials, lighting, or any other general sign-related topics, provide helpful information about those specific topics. Do NOT ask "How can I help you" or redirect them - just answer their question directly.
 
+IRRELEVANT QUESTIONS HANDLING:
+- If customers ask questions completely unrelated to signs, signage, business, or customer service (e.g., weather, politics, personal advice, etc.), respond with:
+"I'm sorry, but I'm specifically trained to help with signage-related questions and customer support for Signize. I can't provide information on that topic. Is there something about signs, materials, installation, or our services that I can help you with?"
+- Keep responses professional but redirect them back to signage-related topics.
+
+GOODBYE HANDLING:
+- When customers say "bye", "goodbye", "thank you", "that's all", or similar closing phrases, respond with:
+"Thank you for choosing Signize! It was a pleasure helping you today. If you have any more questions about signs or need assistance in the future, feel free to reach out. Have a great day!"
+- Always end conversations warmly and professionally.
+
 Tone:
 - Friendly and conversational, not robotic.
 - Adjust based on how the customer responds.
@@ -229,9 +239,9 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                         break
                 
                 if session_row:
-                    # Update the existing row
+                    # Update the existing row with new conversation data
                     worksheet.update(f'A{session_row}:F{session_row}', [row])
-                    print(f"✅ Session {session_id} updated in Google Sheets (row {session_row})")
+                    print(f"✅ Session {session_id} updated in Google Sheets (row {session_row}) - {len(chat_history)} messages")
                     return True
                 else:
                     print(f"⚠️  Session {session_id} not found in sheet, appending new row")
@@ -371,9 +381,15 @@ def chat():
         # Save to Google Sheets if email is available (update existing or create new)
         if chat_sessions[session_id].get("email"):
             update_existing = session_id in saved_sessions
+            print(f"📊 Updating Google Sheets for session {session_id}: {message_count} messages, update_existing={update_existing}")
             success = save_session_to_sheets(session_id, chat_sessions[session_id]["email"], chat_sessions[session_id]["messages"], update_existing)
             if success and session_id not in saved_sessions:
                 saved_sessions.add(session_id)
+                print(f"✅ Session {session_id} added to saved_sessions")
+            elif success:
+                print(f"✅ Session {session_id} updated in Google Sheets")
+        else:
+            print(f"⚠️  No email available for session {session_id}, skipping Google Sheets update")
         
         # Order information saving is now handled by the system prompt when appropriate
         
@@ -454,6 +470,8 @@ CONTEXT INSTRUCTIONS:
 7. Trigger quote form with [QUOTE_FORM_TRIGGER] when customer explicitly wants quotes/mockups.
 8. CRITICAL: Even if customer says "Hi" again after email collection, do NOT ask for email - just say "Hello! How can I help you with your sign needs today?"
 9. CRITICAL: When customer wants to update/modify their quote, ALWAYS trigger the form with [QUOTE_FORM_TRIGGER].
+10. CRITICAL: For irrelevant questions (weather, politics, etc.), redirect to signage topics professionally.
+11. CRITICAL: For goodbye messages, give warm Signize farewell.
 """
     
     # Order issue handling is now managed by the system prompt
@@ -665,6 +683,48 @@ def list_sheets_saved_sessions():
         "saved_to_sheets": list(saved_sessions),
         "count": len(saved_sessions)
     })
+
+# Route to debug Google Sheets content
+@app.route("/debug-sheets", methods=["GET"])
+def debug_sheets():
+    print(">>> Debug Google Sheets content")
+    
+    if not GOOGLE_SHEETS_ENABLED:
+        return jsonify({"error": "Google Sheets integration disabled"})
+    
+    try:
+        # Get all values from the sheet
+        all_values = worksheet.get_all_values()
+        
+        # Parse the data
+        sessions_data = []
+        for i, row in enumerate(all_values):
+            if i == 0:  # Skip header row
+                continue
+            if len(row) >= 6:
+                sessions_data.append({
+                    "row": i + 1,
+                    "session_id": row[0] if len(row) > 0 else "",
+                    "email": row[1] if len(row) > 1 else "",
+                    "timestamp": row[2] if len(row) > 2 else "",
+                    "message_count": row[3] if len(row) > 3 else "",
+                    "conversation_preview": (row[4][:100] + "...") if len(row) > 4 and len(row[4]) > 100 else (row[4] if len(row) > 4 else ""),
+                    "status": row[5] if len(row) > 5 else ""
+                })
+        
+        return jsonify({
+            "success": True,
+            "total_rows": len(all_values),
+            "sessions": sessions_data,
+            "saved_sessions_count": len(saved_sessions),
+            "saved_sessions": list(saved_sessions)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
 
 # Route to test MongoDB connection
 @app.route("/test-mongodb", methods=["GET"])

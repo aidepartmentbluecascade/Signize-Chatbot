@@ -99,6 +99,18 @@ function initializeEventListeners() {
         if (e.target === quoteModal) closeQuoteForm();
     });
     
+    // ESC key to close quote form
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            if (quoteModal.style.display === 'block') {
+                closeQuoteForm();
+            }
+            if (quoteSummaryModal.style.display === 'block') {
+                closeQuoteSummary();
+            }
+        }
+    });
+    
     quoteSummaryModal.addEventListener('click', function(e) {
         if (e.target === quoteSummaryModal) closeQuoteSummary();
     });

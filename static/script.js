@@ -324,8 +324,38 @@ async function sendMessageToBot(message) {
 }
 
 // Quote Form Functions
+function debugFormFields() {
+    console.log('🔍 Debugging form fields...');
+    console.log('Form element:', quoteForm);
+    
+    // List all form elements
+    const formElements = quoteForm.elements;
+    console.log('Available form elements:');
+    for (let i = 0; i < formElements.length; i++) {
+        const element = formElements[i];
+        if (element.name) {
+            console.log(`- ${element.name}: ${element.type} (current value: "${element.value}")`);
+        }
+    }
+    
+    // Check specific fields we need
+    const requiredFields = ['width', 'height', 'materialPreference', 'illumination', 'installationSurface', 'cityState', 'budget', 'placement', 'deadline', 'additionalNotes'];
+    requiredFields.forEach(field => {
+        const element = quoteForm.elements[field];
+        if (element) {
+            console.log(`✅ Field ${field} found: ${element.type}`);
+        } else {
+            console.log(`❌ Field ${field} NOT found`);
+        }
+    });
+}
+
 function showQuoteForm() {
     quoteModal.classList.add('show');
+    
+    // Debug form fields first
+    debugFormFields();
+    
     // Initialize unit buttons to default state only if no previous data
     if (!hasPreviousQuoteData()) {
         resetUnitButtons();
@@ -521,12 +551,40 @@ async function loadExistingQuoteData() {
             const data = await response.json();
             console.log('Loaded existing quote data:', data);
             
-            if (data.form_data) {
+            if (data.form_data && Object.keys(data.form_data).length > 0) {
+                // Wait a bit for form elements to be ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
                 // Pre-fill the form with existing data
                 Object.keys(data.form_data).forEach(key => {
-                    const element = quoteForm.elements[key];
+                    let element = quoteForm.elements[key];
+                    
+                    // Handle field name variations
+                    if (!element) {
+                        // Try alternative field names
+                        const fieldMappings = {
+                            'width': 'width',
+                            'height': 'height',
+                            'materialPreference': 'materialPreference',
+                            'illumination': 'illumination',
+                            'installationSurface': 'installationSurface',
+                            'cityState': 'cityState',
+                            'budget': 'budget',
+                            'placement': 'placement',
+                            'deadline': 'deadline',
+                            'additionalNotes': 'additionalNotes'
+                        };
+                        
+                        if (fieldMappings[key]) {
+                            element = quoteForm.elements[fieldMappings[key]];
+                        }
+                    }
+                    
                     if (element) {
                         element.value = data.form_data[key];
+                        console.log(`Filled field ${key} with value: ${data.form_data[key]}`);
+                    } else {
+                        console.log(`⚠️  Field ${key} not found in form`);
                     }
                 });
                 
@@ -541,6 +599,8 @@ async function loadExistingQuoteData() {
                     console.log('No unit data found in form data, using defaults');
                     resetUnitButtons();
                 }
+                
+                console.log('✅ Form successfully loaded with existing data');
             } else {
                 console.log('No existing form data found');
                 resetUnitButtons();
@@ -904,3 +964,38 @@ function testUnitButtons() {
         height: heightInput?.dataset.unit || 'not set'
     });
 }
+
+function testLoadQuoteData() {
+    console.log('🧪 Testing quote data loading...');
+    console.log('Session ID:', sessionId);
+    
+    // Test the API endpoint directly
+    fetch(`/get-quote/${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 Raw API response:', data);
+            
+            if (data.form_data) {
+                console.log('📋 Form data keys:', Object.keys(data.form_data));
+                console.log('📋 Form data values:', data.form_data);
+                
+                // Check if we can fill the form
+                Object.keys(data.form_data).forEach(key => {
+                    const element = quoteForm.elements[key];
+                    if (element) {
+                        console.log(`✅ Can fill ${key}: ${element.type}`);
+                    } else {
+                        console.log(`❌ Cannot fill ${key}: field not found`);
+                    }
+                });
+            } else {
+                console.log('⚠️  No form_data in response');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error testing quote data:', error);
+        });
+}
+
+// Add to global scope for testing
+window.testLoadQuoteData = testLoadQuoteData;

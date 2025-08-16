@@ -10,8 +10,8 @@ credentials.json
 *credentials*
 *credential*
 
-# MongoDB connection strings and sensitive data
-*mongodb*
+# MongoDB connection strings and sensitive data (but allow mongodb_operations.py)
+# *mongodb*
 *connection*
 *uri*
 

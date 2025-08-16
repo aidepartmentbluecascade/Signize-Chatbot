@@ -102,13 +102,38 @@ function initializeEventListeners() {
     // ESC key to close quote form
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            if (quoteModal.style.display === 'block') {
+            if (quoteModal.classList.contains('show')) {
                 closeQuoteForm();
             }
-            if (quoteSummaryModal.style.display === 'block') {
+            if (quoteSummaryModal.classList.contains('show')) {
                 closeQuoteSummary();
             }
         }
+    });
+    
+    // Unit button functionality for dimensions
+    const unitButtons = document.querySelectorAll('.unit-btn');
+    unitButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const field = this.dataset.field;
+            const unit = this.dataset.unit;
+            
+            console.log(`Unit button clicked: ${field} - ${unit}`);
+            
+            // Remove active class from all buttons in this field group
+            const fieldGroup = this.closest('.input-with-unit');
+            fieldGroup.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Update the corresponding input field with unit info
+            const input = fieldGroup.querySelector('input');
+            if (input) {
+                input.dataset.unit = unit;
+                console.log(`Updated ${field} input unit to: ${unit}`);
+            }
+        });
     });
     
     quoteSummaryModal.addEventListener('click', function(e) {
@@ -301,6 +326,8 @@ async function sendMessageToBot(message) {
 // Quote Form Functions
 function showQuoteForm() {
     quoteModal.classList.add('show');
+    // Initialize unit buttons to default state
+    resetUnitButtons();
     // Pre-fill form if we have existing data
     loadExistingQuoteData();
 }
@@ -308,10 +335,29 @@ function showQuoteForm() {
 function closeQuoteForm() {
     quoteModal.classList.remove('show');
     quoteForm.reset();
+    // Reset unit buttons to default state
+    resetUnitButtons();
 }
 
 function closeQuoteSummary() {
     quoteSummaryModal.classList.remove('show');
+}
+
+function resetUnitButtons() {
+    // Reset all unit buttons to inches (default)
+    const unitButtons = document.querySelectorAll('.unit-btn');
+    unitButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.unit === 'inches') {
+            btn.classList.add('active');
+        }
+        // Reset dataset unit on inputs
+        const fieldGroup = btn.closest('.input-with-unit');
+        const input = fieldGroup.querySelector('input');
+        if (input) {
+            input.dataset.unit = 'inches';
+        }
+    });
 }
 
 async function handleQuoteSubmit(event) {
@@ -322,12 +368,41 @@ async function handleQuoteSubmit(event) {
         return;
     }
     
+    // Validate dimensions
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const width = widthInput.value.trim();
+    const height = heightInput.value.trim();
+    
+    if (!width || !height) {
+        alert('Please enter both width and height dimensions.');
+        return;
+    }
+    
+    if (isNaN(width) || isNaN(height) || parseFloat(width) <= 0 || parseFloat(height) <= 0) {
+        alert('Please enter valid positive numbers for dimensions.');
+        return;
+    }
+    
     const formData = new FormData(quoteForm);
     const quoteData = {};
     
     // Convert FormData to object
     for (let [key, value] of formData.entries()) {
         quoteData[key] = value;
+    }
+    
+    // Handle dimensions with units
+    const widthUnit = widthInput.dataset.unit || 'inches';
+    const heightUnit = heightInput.dataset.unit || 'inches';
+    
+    // Create formatted dimensions string
+    if (width && height) {
+        quoteData.sizeDimensions = `${width} ${widthUnit} × ${height} ${heightUnit}`;
+        quoteData.width = width;
+        quoteData.height = height;
+        quoteData.widthUnit = widthUnit;
+        quoteData.heightUnit = heightUnit;
     }
     
     try {
@@ -367,7 +442,7 @@ function showQuoteSummary(quoteData) {
             <h3>Your Quote Request Details</h3>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Size & Dimensions:</span>
-                <span class="quote-summary-value">${quoteData.sizeDimensions}</span>
+                <span class="quote-summary-value">${quoteData.sizeDimensions || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Material:</span>

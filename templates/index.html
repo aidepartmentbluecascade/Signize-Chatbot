@@ -137,7 +137,29 @@
                     <form id="quoteForm">
                         <div class="form-group">
                             <label for="sizeDimensions">Size & Dimensions *</label>
-                            <input type="text" id="sizeDimensions" name="sizeDimensions" placeholder="e.g., 4ft x 6ft, 2inches x 3inches " required>
+                            <div class="dimensions-container">
+                                <div class="dimension-input">
+                                    <label for="width">Width</label>
+                                    <div class="input-with-unit">
+                                        <input type="number" id="width" name="width" placeholder="Enter width" step="0.01" min="0" required>
+                                        <div class="unit-buttons">
+                                            <button type="button" class="unit-btn active" data-unit="inches" data-field="width">Inches</button>
+                                            <button type="button" class="unit-btn" data-unit="feet" data-field="width">Feet</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dimension-input">
+                                    <label for="height">Height</label>
+                                    <div class="input-with-unit">
+                                        <input type="number" id="height" name="height" placeholder="Enter height" step="0.01" min="0" required>
+                                        <div class="unit-buttons">
+                                            <button type="button" class="unit-btn active" data-unit="inches" data-field="height">Inches</button>
+                                            <button type="button" class="unit-btn" data-unit="feet" data-field="height">Feet</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="sizeDimensions" name="sizeDimensions">
                         </div>
                         
                         <div class="form-group">

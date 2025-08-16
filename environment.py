@@ -20,6 +20,15 @@ def get_mongodb_uri():
     load_dotenv()
     return os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
 
+def get_flask_config():
+    """Get Flask configuration for production deployment"""
+    load_dotenv()
+    return {
+        'FLASK_ENV': os.getenv('FLASK_ENV', 'production'),
+        'FLASK_DEBUG': os.getenv('FLASK_DEBUG', 'false').lower() == 'true',
+        'FLASK_SECRET_KEY': os.getenv('FLASK_SECRET_KEY', os.urandom(24).hex())
+    }
+
 def get_google_credentials():
     """Get Google credentials from environment variables or file"""
     load_dotenv()

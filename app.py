@@ -69,6 +69,11 @@ client = OpenAI(api_key=openai_key)
 # Flask application setup
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
+# Load production configuration
+from environment import get_flask_config
+flask_config = get_flask_config()
+app.config['SECRET_KEY'] = flask_config['FLASK_SECRET_KEY']
+
 # In-memory storage for chat sessions
 chat_sessions = {}
 # Track which sessions have already been saved to Google Sheets
@@ -915,4 +920,6 @@ def serve_logo(session_id, filename):
 # Run the Flask app
 if __name__ == "__main__":
     print("Starting Sign-nize Customer Support System...")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # Use environment variables for production settings
+    debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host="0.0.0.0", port=5000, debug=debug_mode)

@@ -10,10 +10,18 @@ const emailFieldContainer = document.getElementById('emailFieldContainer');
 const emailInput = document.getElementById('emailInput');
 const emailSubmitBtn = document.getElementById('emailSubmitBtn');
 const emailValidation = document.getElementById('emailValidation');
-const logoUploadContainer = document.getElementById('logoUploadContainer');
-const logoFile = document.getElementById('logoFile');
-const logoUploadBtn = document.getElementById('logoUploadBtn');
-const logoUploadStatus = document.getElementById('logoUploadStatus');
+// REMOVED: Logo upload elements - not needed
+
+// Quote Form Elements
+const quoteModal = document.getElementById('quoteModal');
+const quoteSummaryModal = document.getElementById('quoteSummaryModal');
+const quoteForm = document.getElementById('quoteForm');
+const closeQuoteModal = document.getElementById('closeQuoteModal');
+const closeQuoteSummaryModal = document.getElementById('closeQuoteSummaryModal');
+const cancelQuote = document.getElementById('cancelQuote');
+const requestChanges = document.getElementById('requestChanges');
+const closeSummary = document.getElementById('closeSummary');
+const quoteSummaryContent = document.getElementById('quoteSummaryContent');
 
 // Session Management
 let sessionId = generateSessionId();
@@ -54,9 +62,7 @@ function initializeEventListeners() {
         }
     });
     
-    // Logo upload functionality
-    logoFile.addEventListener('change', handleLogoFileSelect);
-    logoUploadBtn.addEventListener('click', uploadLogo);
+    // REMOVED: Logo upload functionality - not needed
     
     // Input focus and typing indicators
     messageInput.addEventListener('focus', function() {
@@ -79,6 +85,23 @@ function initializeEventListeners() {
     minimizeBtn.addEventListener('click', minimizeChat);
     closeBtn.addEventListener('click', closeChat);
     fabBtn.addEventListener('click', toggleChat);
+    
+    // Quote form event listeners
+    closeQuoteModal.addEventListener('click', closeQuoteForm);
+    closeQuoteSummaryModal.addEventListener('click', closeQuoteSummary);
+    cancelQuote.addEventListener('click', closeQuoteForm);
+    requestChanges.addEventListener('click', requestQuoteChanges);
+    closeSummary.addEventListener('click', closeQuoteSummary);
+    quoteForm.addEventListener('submit', handleQuoteSubmit);
+    
+    // Close modals when clicking overlay
+    quoteModal.addEventListener('click', function(e) {
+        if (e.target === quoteModal) closeQuoteForm();
+    });
+    
+    quoteSummaryModal.addEventListener('click', function(e) {
+        if (e.target === quoteSummaryModal) closeQuoteSummary();
+    });
     
     // Auto-resize input
     messageInput.addEventListener('input', autoResizeInput);
@@ -170,105 +193,7 @@ function enableChatInput() {
     });
 }
 
-// Logo upload functions
-function handleLogoFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) {
-        logoUploadBtn.disabled = false;
-        showLogoUploadStatus('File selected: ' + file.name, 'uploading');
-    } else {
-        logoUploadBtn.disabled = true;
-        hideLogoUploadStatus();
-    }
-}
-
-async function uploadLogo() {
-    const file = logoFile.files[0];
-    if (!file) {
-        showLogoUploadStatus('Please select a file first', 'error');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('logo', file);
-    formData.append('session_id', sessionId);
-    
-    showLogoUploadStatus('Uploading logo...', 'uploading');
-    logoUploadBtn.disabled = true;
-    
-    try {
-        const response = await fetch('/upload-logo', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showLogoUploadStatus(`${data.message} (${data.logo_count} total logos)`, 'success');
-            
-            // Clear the file input for next upload but keep container visible
-            logoFile.value = '';
-            logoUploadBtn.disabled = true;
-            
-            // Hide the upload container after successful upload to prevent confusion
-            setTimeout(() => {
-                hideLogoUploadContainer();
-            }, 2000);
-            
-            // Send a message to the bot indicating logo was uploaded
-            setTimeout(() => {
-                addMessage('user', `I've uploaded my logo: ${file.name}`);
-                sendMessageToBot(`I've uploaded my logo: ${file.name}`);
-            }, 1000);
-            
-            // Hide success message after 3 seconds
-            setTimeout(() => {
-                hideLogoUploadStatus();
-            }, 3000);
-        } else {
-            showLogoUploadStatus(data.message, 'error');
-            logoUploadBtn.disabled = false;
-        }
-    } catch (error) {
-        console.error('Logo upload error:', error);
-        showLogoUploadStatus('Upload failed', 'error');
-        logoUploadBtn.disabled = false;
-    }
-}
-
-function showLogoUploadContainer() {
-    logoUploadContainer.style.display = 'block';
-}
-
-function hideLogoUploadContainer() {
-    logoUploadContainer.style.display = 'none';
-    // Clear file input when hiding
-    logoFile.value = '';
-    logoUploadBtn.disabled = true;
-    hideLogoUploadStatus();
-}
-
-function showLogoUploadStatus(message, type) {
-    logoUploadStatus.textContent = message;
-    logoUploadStatus.className = `logo-upload-status ${type}`;
-}
-
-function hideLogoUploadStatus() {
-    logoUploadStatus.style.display = 'none';
-}
-
-// Check if logos have been uploaded
-async function checkIfLogosUploaded() {
-    try {
-        const response = await fetch(`/session/${sessionId}/logos`);
-        const data = await response.json();
-        return data.logos && data.logos.length > 0;
-    } catch (error) {
-        console.error('Error checking logos:', error);
-        return false;
-    }
-}
+// REMOVED: All logo upload functions - not needed
 
 // Show uploaded logos
 // async function showUploadedLogos() {
@@ -330,24 +255,19 @@ async function sendMessageToBot(message) {
             // Add AI response to chat
             addMessage('ai', data.message);
             
+            // Check if quote form should be triggered (only if email is collected)
+            if (data.quote_form_triggered && emailCollected) {
+                setTimeout(() => {
+                    showQuoteForm();
+                }, 1000);
+            }
+            
             // Check if the bot is asking for email
             if (data.message.toLowerCase().includes('email') && !emailCollected) {
                 showEmailField();
             }
             
-            // Check if the bot is asking for logo upload (only show if not already uploaded)
-            if (data.message.toLowerCase().includes('logo') && data.message.toLowerCase().includes('upload')) {
-                // Check if we have uploaded logos before showing the container
-                const hasUploadedLogos = await checkIfLogosUploaded();
-                if (!hasUploadedLogos) {
-                    showLogoUploadContainer();
-                } else {
-                    // If logos are already uploaded, hide the upload container and don't show upload prompt
-                    hideLogoUploadContainer();
-                    // Don't trigger any additional logo-related actions
-                    return;
-                }
-            }
+            // REMOVED: Logo upload functionality - not needed
             
             // Check if the bot is asking about uploaded logos
             // Note: showUploadedLogos function is commented out, so we'll skip this for now
@@ -364,6 +284,146 @@ async function sendMessageToBot(message) {
         isTyping = false;
         focusInput();
     }
+}
+
+// Quote Form Functions
+function showQuoteForm() {
+    quoteModal.classList.add('show');
+    // Pre-fill form if we have existing data
+    loadExistingQuoteData();
+}
+
+function closeQuoteForm() {
+    quoteModal.classList.remove('show');
+    quoteForm.reset();
+}
+
+function closeQuoteSummary() {
+    quoteSummaryModal.classList.remove('show');
+}
+
+async function handleQuoteSubmit(event) {
+    event.preventDefault();
+    
+    if (!userEmail) {
+        alert('Please provide your email address first.');
+        return;
+    }
+    
+    const formData = new FormData(quoteForm);
+    const quoteData = {};
+    
+    // Convert FormData to object
+    for (let [key, value] of formData.entries()) {
+        quoteData[key] = value;
+    }
+    
+    try {
+        const response = await fetch('/save-quote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                session_id: sessionId,
+                email: userEmail,
+                form_data: quoteData
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            closeQuoteForm();
+            showQuoteSummary(quoteData);
+            
+            // Send a message to the bot
+            addMessage('user', 'I have submitted my quote request with all the details.');
+            sendMessageToBot('I have submitted my quote request with all the details.');
+        } else {
+            alert('Error saving quote: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error submitting quote:', error);
+        alert('Error submitting quote. Please try again.');
+    }
+}
+
+function showQuoteSummary(quoteData) {
+    const summaryHTML = `
+        <div class="quote-summary">
+            <h3>Your Quote Request Details</h3>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Size & Dimensions:</span>
+                <span class="quote-summary-value">${quoteData.sizeDimensions}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Material:</span>
+                <span class="quote-summary-value">${quoteData.materialPreference}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Illumination:</span>
+                <span class="quote-summary-value">${quoteData.illumination}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Installation Surface:</span>
+                <span class="quote-summary-value">${quoteData.installationSurface}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Location:</span>
+                <span class="quote-summary-value">${quoteData.cityState}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Budget:</span>
+                <span class="quote-summary-value">${quoteData.budget}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Placement:</span>
+                <span class="quote-summary-value">${quoteData.placement}</span>
+            </div>
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Deadline:</span>
+                <span class="quote-summary-value">${quoteData.deadline}</span>
+            </div>
+            ${quoteData.additionalNotes ? `
+            <div class="quote-summary-item">
+                <span class="quote-summary-label">Additional Notes:</span>
+                <span class="quote-summary-value">${quoteData.additionalNotes}</span>
+            </div>
+            ` : ''}
+        </div>
+        <p><strong>Next Steps:</strong></p>
+        <p>Please email your logo files to <a href="mailto:info@signize.us">info@signize.us</a> so our designers can work with your brand assets.</p>
+        <p>Our team will review your requirements and get back to you with a mockup and quote within a few hours.</p>
+    `;
+    
+    quoteSummaryContent.innerHTML = summaryHTML;
+    quoteSummaryModal.classList.add('show');
+}
+
+async function loadExistingQuoteData() {
+    try {
+        const response = await fetch(`/get-quote/${sessionId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.form_data) {
+                // Pre-fill the form with existing data
+                Object.keys(data.form_data).forEach(key => {
+                    const element = quoteForm.elements[key];
+                    if (element) {
+                        element.value = data.form_data[key];
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading existing quote data:', error);
+    }
+}
+
+function requestQuoteChanges() {
+    closeQuoteSummary();
+    showQuoteForm();
 }
 
 // Add message to chat
@@ -448,7 +508,7 @@ function handleQuickAction(action) {
             message = "I'd like to start designing a custom sign. Can you help me with the process?";
             break;
         case 'get-quote':
-            message = "I'm interested in getting a quote for a custom sign. What information do you need?";
+            message = "I want a mockup and quote for a custom sign.";
             break;
         case 'view-portfolio':
             message = "Can you show me some examples of your previous work or portfolio?";

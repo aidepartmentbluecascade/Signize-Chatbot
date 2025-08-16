@@ -91,22 +91,7 @@
                         <div class="email-validation" id="emailValidation"></div>
                     </div>
                     
-                    <!-- Logo Upload Field (hidden by default) -->
-                    <div class="logo-upload-container" id="logoUploadContainer" style="display: none;">
-                        <div class="logo-upload-wrapper">
-                            <label for="logoFile" class="logo-upload-label">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <span>Click to upload logo</span>
-                                <small>You can upload multiple logos</small>
-                            </label>
-                            <input type="file" id="logoFile" accept=".png,.jpg,.jpeg,.gif,.svg,.pdf,.ai,.eps" class="logo-file-input">
-                            <button id="logoUploadBtn" class="logo-upload-btn" disabled>
-                                <i class="fas fa-upload"></i>
-                                Upload
-                            </button>
-                        </div>
-                        <div class="logo-upload-status" id="logoUploadStatus"></div>
-                    </div>
+                    <!-- REMOVED: Logo upload section - not needed -->
                     
                     <div class="input-wrapper">
                         <input type="text" id="messageInput" placeholder="Type your message here..." class="message-input">
@@ -139,6 +124,131 @@
             </button>
         </div>
 
+        <!-- Quote Form Modal -->
+        <div class="modal-overlay" id="quoteModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Get Your Quote & Mockup</h2>
+                    <button class="modal-close" id="closeQuoteModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="quoteForm">
+                        <div class="form-group">
+                            <label for="sizeDimensions">Size & Dimensions *</label>
+                            <input type="text" id="sizeDimensions" name="sizeDimensions" placeholder="e.g., 4ft x 6ft, 2m x 3m" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="materialPreference">Material Preference *</label>
+                            <select id="materialPreference" name="materialPreference" required>
+                                <option value="">Select material</option>
+                                <option value="metal">Metal</option>
+                                <option value="acrylic">Acrylic</option>
+                                <option value="aluminum">Aluminum</option>
+                                <option value="vinyl">Vinyl</option>
+                                <option value="wood">Wood</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="illumination">Illumination *</label>
+                            <select id="illumination" name="illumination" required>
+                                <option value="">Select lighting option</option>
+                                <option value="no-lighting">No lighting</option>
+                                <option value="led-backlit">LED Backlit</option>
+                                <option value="front-lit">Front Lit</option>
+                                <option value="halo-lit">Halo Lit</option>
+                                <option value="channel-letters">Channel Letters</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="installationSurface">Installation Surface *</label>
+                            <select id="installationSurface" name="installationSurface" required>
+                                <option value="">Select surface type</option>
+                                <option value="brick-wall">Brick Wall</option>
+                                <option value="concrete">Concrete</option>
+                                <option value="drywall">Drywall</option>
+                                <option value="metal-surface">Metal Surface</option>
+                                <option value="wood-surface">Wood Surface</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cityState">City & State *</label>
+                            <input type="text" id="cityState" name="cityState" placeholder="e.g., New York, NY" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="budget">Budget Range *</label>
+                            <select id="budget" name="budget" required>
+                                <option value="">Select budget range</option>
+                                <option value="under-500">Under $500</option>
+                                <option value="500-1000">$500 - $1,000</option>
+                                <option value="1000-2500">$1,000 - $2,500</option>
+                                <option value="2500-5000">$2,500 - $5,000</option>
+                                <option value="5000-10000">$5,000 - $10,000</option>
+                                <option value="over-10000">Over $10,000</option>
+                                <option value="flexible">Flexible</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="placement">Placement *</label>
+                            <select id="placement" name="placement" required>
+                                <option value="">Select placement</option>
+                                <option value="indoor">Indoor</option>
+                                <option value="outdoor">Outdoor</option>
+                                <option value="both">Both Indoor & Outdoor</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="deadline">Deadline *</label>
+                            <select id="deadline" name="deadline" required>
+                                <option value="">Select timeline</option>
+                                <option value="standard">Standard (15-17 business days)</option>
+                                <option value="rush">Rush (12 business days - 25% additional cost)</option>
+                                <option value="flexible">Flexible</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="additionalNotes">Additional Notes</label>
+                            <textarea id="additionalNotes" name="additionalNotes" placeholder="Any additional requirements or special requests..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Submit Quote Request</button>
+                            <button type="button" class="btn-secondary" id="cancelQuote">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Summary Modal -->
+        <div class="modal-overlay" id="quoteSummaryModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Your Quote Summary</h2>
+                    <button class="modal-close" id="closeQuoteSummaryModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="quoteSummaryContent"></div>
+                    <div class="quote-actions">
+                        <button class="btn-primary" id="requestChanges">Request Changes</button>
+                        <button class="btn-secondary" id="closeSummary">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 

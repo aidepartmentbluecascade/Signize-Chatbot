@@ -125,6 +125,14 @@ IMPORTANT: Only trigger the quote form when customers explicitly say they want t
 - "want a mockup", "need pricing", "get estimate"
 - Use phrases like "I want to share", "Let me tell you", "I need to provide"
 
+QUOTE UPDATE PROCESS:
+When customers want to update or modify their existing quote:
+- If they say "update", "modify", "change", "edit", "revise", "adjust" their quote
+- If they want to "make changes" or "update the form"
+- If they need to "fill out the form again" with new details
+- ALWAYS trigger the quote form with [QUOTE_FORM_TRIGGER] and say:
+"I'd be happy to help you update your quote! Let me open the form again so you can modify your details."
+
 After Form Submission:
 - If customer says they want changes, acknowledge and let them know they can modify the form.
 - If customer says no changes needed, simply say: "Perfect! Please email your logo files to info@signize.us so our designers can work with your brand assets. We'll review your requirements and get back to you with a mockup and quote within a few hours."
@@ -445,6 +453,7 @@ CONTEXT INSTRUCTIONS:
 6. For general sign questions after order issues, provide helpful information without asking "How can I help you" again.
 7. Trigger quote form with [QUOTE_FORM_TRIGGER] when customer explicitly wants quotes/mockups.
 8. CRITICAL: Even if customer says "Hi" again after email collection, do NOT ask for email - just say "Hello! How can I help you with your sign needs today?"
+9. CRITICAL: When customer wants to update/modify their quote, ALWAYS trigger the form with [QUOTE_FORM_TRIGGER].
 """
     
     # Order issue handling is now managed by the system prompt
@@ -663,22 +672,24 @@ def test_mongodb():
     print(">>> Testing MongoDB connection")
     
     try:
-        from mongodb_operations import test_mongodb_connection
-        success = test_mongodb_connection()
+        # Test the connection directly
+        from environment import get_mongodb_uri
+        mongodb_uri = get_mongodb_uri()
+        print(f"🔍 MongoDB URI: {mongodb_uri[:50]}...")
         
-        if success:
-            return jsonify({
-                "success": True,
-                "message": "MongoDB connection test successful",
-                "status": "connected"
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "message": "MongoDB connection test failed",
-                "status": "disconnected"
-            })
+        from pymongo import MongoClient
+        client = MongoClient(mongodb_uri, serverSelectionTimeoutMS=5000)
+        client.admin.command('ping')
+        client.close()
+        
+        return jsonify({
+            "success": True,
+            "message": "MongoDB connection test successful",
+            "status": "connected",
+            "uri_preview": mongodb_uri[:50] + "..."
+        })
     except Exception as e:
+        print(f"MongoDB test error: {e}")
         return jsonify({
             "success": False,
             "message": f"MongoDB test error: {str(e)}",
@@ -724,6 +735,44 @@ def test_mongodb_save():
             "success": False,
             "message": f"Test save error: {str(e)}",
             "status": "error"
+        })
+
+# Route to check MongoDB manager status
+@app.route("/mongodb-status", methods=["GET"])
+def mongodb_status():
+    print(">>> Checking MongoDB manager status")
+    
+    try:
+        from mongodb_operations import mongodb_manager
+        
+        status = {
+            "connected": mongodb_manager.connected,
+            "has_client": mongodb_manager.client is not None,
+            "has_db": mongodb_manager.db is not None,
+            "has_collection": mongodb_manager.quotes_collection is not None
+        }
+        
+        if mongodb_manager.connected:
+            return jsonify({
+                "success": True,
+                "status": "connected",
+                "details": status,
+                "database": mongodb_manager.db.name if mongodb_manager.db else None,
+                "collection": mongodb_manager.quotes_collection.name if mongodb_manager.quotes_collection else None
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "status": "disconnected",
+                "details": status,
+                "error": "MongoDB manager is not connected"
+            })
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "status": "error",
+            "error": str(e)
         })
 
 # Tool call function for chat session management

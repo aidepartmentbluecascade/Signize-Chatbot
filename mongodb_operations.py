@@ -6,15 +6,39 @@ from environment import load_environment
 
 class MongoDBManager:
     def __init__(self):
+        # Load environment variables
         load_environment()
-        mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
+        
+        # Get MongoDB connection string from environment or use default
+        from environment import get_mongodb_uri
+        mongodb_uri = get_mongodb_uri()
+        
+        print(f"🔍 Attempting to connect to MongoDB with URI: {mongodb_uri[:50]}...")
+        
+        # Check if this is Atlas or local
+        is_atlas = "mongodb+srv://" in mongodb_uri or "cluster" in mongodb_uri
+        print(f"📍 Connection type: {'MongoDB Atlas' if is_atlas else 'Local MongoDB'}")
+        
         try:
-            self.client = MongoClient(mongodb_uri)
-            self.client.admin.command('ping')  # Test connection
+            self.client = MongoClient(mongodb_uri, serverSelectionTimeoutMS=10000)
+            # Test the connection
+            self.client.admin.command('ping')
             self.db = self.client['signize_bot']
             self.quotes_collection = self.db['quotes']
             self.connected = True
             print("✅ MongoDB connected successfully")
+            print(f"📊 Database: {self.db.name}")
+            print(f"📋 Collection: {self.quotes_collection.name}")
+            print(f"🌐 Connection: {'Atlas' if is_atlas else 'Local'}")
+            
+            # Test write access
+            test_doc = {"test": "connection", "timestamp": datetime.now(), "connection_type": "atlas" if is_atlas else "local"}
+            result = self.quotes_collection.insert_one(test_doc)
+            print(f"✅ Write test successful - inserted document ID: {result.inserted_id}")
+            # Clean up test document
+            self.quotes_collection.delete_one({"_id": result.inserted_id})
+            print("✅ Test document cleaned up")
+            
         except Exception as e:
             print(f"⚠️  MongoDB connection failed: {e}")
             print("   Quote data will be stored locally only")
@@ -228,9 +252,9 @@ class MongoDBManager:
 def test_mongodb_connection():
     """Test MongoDB connection for debugging"""
     try:
-        load_environment()
-        mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
-        client = MongoClient(mongodb_uri)
+        from environment import get_mongodb_uri
+        mongodb_uri = get_mongodb_uri()
+        client = MongoClient(mongodb_uri, serverSelectionTimeoutMS=5000)
         client.admin.command('ping')
         client.close()
         return True

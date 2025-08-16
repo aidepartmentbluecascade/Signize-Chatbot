@@ -112,6 +112,7 @@ Email Collection Process:
 - After email is collected, ask "How can I help you with your sign needs today?"
 - CRITICAL: Once email is collected, NEVER ask for it again in the same conversation.
 - CRITICAL: If customer says "Hi" or similar greeting and email is already collected, respond with "Hello! How can I help you with your sign needs today?" - DO NOT ask for email again.
+- CRITICAL: Even if the conversation seems to restart or customer says "Hi" again, if you already have their email, do NOT ask for it again.
 
 Quote/Mockup Process:
 ONLY when a customer mentions they want a "mockup" or "quote" AND has already provided their email address, respond with:
@@ -435,15 +436,16 @@ def generate_sign_nize_response(client, user_message, session_data):
         # Add simplified context instructions
     context_instructions = f"""
     
- CONTEXT INSTRUCTIONS:
- 1. CAREFULLY READ the full conversation history above.
- 2. If this is the FIRST message in the conversation, ALWAYS ask for email first.
- 3. If email is already collected, NEVER ask for it again.
- 4. After email collection, ask "How can I help you with your sign needs today?"
- 5. Handle order issues by collecting Order ID and phone number, then tell customer representative will contact them.
- 6. For general sign questions after order issues, provide helpful information without asking "How can I help you" again.
- 7. Trigger quote form with [QUOTE_FORM_TRIGGER] when customer explicitly wants quotes/mockups.
- """
+CONTEXT INSTRUCTIONS:
+1. CAREFULLY READ the full conversation history above.
+2. If this is the FIRST message in the conversation, ALWAYS ask for email first.
+3. If email is already collected, NEVER ask for it again - this is a CRITICAL rule.
+4. After email collection, ask "How can I help you with your sign needs today?"
+5. Handle order issues by collecting Order ID and phone number, then tell customer representative will contact them.
+6. For general sign questions after order issues, provide helpful information without asking "How can I help you" again.
+7. Trigger quote form with [QUOTE_FORM_TRIGGER] when customer explicitly wants quotes/mockups.
+8. CRITICAL: Even if customer says "Hi" again after email collection, do NOT ask for email - just say "Hello! How can I help you with your sign needs today?"
+"""
     
     # Order issue handling is now managed by the system prompt
     

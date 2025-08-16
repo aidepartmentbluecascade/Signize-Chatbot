@@ -356,15 +356,16 @@ function showQuoteForm() {
     // Debug form fields first
     debugFormFields();
     
-    // Initialize unit buttons to default state only if no previous data
-    if (!hasPreviousQuoteData()) {
-        resetUnitButtons();
+    // Check if we have a session ID before trying to load data
+    if (sessionId) {
+        console.log('🔄 Session ID found, attempting to load existing data...');
+        // Always try to load existing data and restore unit buttons
+        // The loadExistingQuoteData function will handle unit button restoration
+        loadExistingQuoteData();
     } else {
-        // Restore previous unit selections from database
-        restoreUnitButtonsFromDatabase();
+        console.log('⚠️  No session ID found, using default form state');
+        resetUnitButtons();
     }
-    // Pre-fill form if we have existing data
-    loadExistingQuoteData();
 }
 
 function closeQuoteForm() {
@@ -406,12 +407,6 @@ function startFreshQuote() {
     quoteForm.reset();
 }
 
-function restoreUnitButtonsFromDatabase() {
-    // This will be called after loadExistingQuoteData loads the data
-    // The unit buttons will be restored in loadExistingQuoteData
-    console.log('Will restore unit buttons from database data');
-}
-
 async function handleQuoteSubmit(event) {
     event.preventDefault();
     
@@ -448,7 +443,8 @@ async function handleQuoteSubmit(event) {
     const widthUnit = widthInput.dataset.unit || 'inches';
     const heightUnit = heightInput.dataset.unit || 'inches';
     
-    console.log('Form submission - Units:', { widthUnit, heightUnit });
+    console.log('📝 Form submission - Units:', { widthUnit, heightUnit });
+    console.log('📝 Form submission - Dimensions:', { width, height });
     
     // Create formatted dimensions string
     if (width && height) {
@@ -458,8 +454,10 @@ async function handleQuoteSubmit(event) {
         quoteData.widthUnit = widthUnit;
         quoteData.heightUnit = heightUnit;
         
-        console.log('Formatted dimensions:', quoteData.sizeDimensions);
+        console.log('📐 Formatted dimensions:', quoteData.sizeDimensions);
     }
+    
+    console.log('📤 Submitting quote data:', quoteData);
     
     try {
         const response = await fetch('/save-quote', {
@@ -475,8 +473,10 @@ async function handleQuoteSubmit(event) {
         });
         
         const data = await response.json();
+        console.log('📥 Save quote response:', data);
         
         if (data.success) {
+            console.log('✅ Quote saved successfully, closing form and showing summary');
             closeQuoteForm();
             showQuoteSummary(quoteData);
             
@@ -484,10 +484,11 @@ async function handleQuoteSubmit(event) {
             addMessage('user', 'I have submitted my quote request with all the details.');
             sendMessageToBot('I have submitted my quote request with all the details.');
         } else {
+            console.error('❌ Quote save failed:', data.error);
             alert('Error saving quote: ' + data.error);
         }
     } catch (error) {
-        console.error('Error submitting quote:', error);
+        console.error('❌ Error submitting quote:', error);
         alert('Error submitting quote. Please try again.');
     }
 }
@@ -546,16 +547,25 @@ function showQuoteSummary(quoteData) {
 
 async function loadExistingQuoteData() {
     try {
+        console.log('🔄 Starting to load existing quote data...');
+        console.log('Session ID:', sessionId);
+        
         const response = await fetch(`/get-quote/${sessionId}`);
+        console.log('📡 API Response status:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
-            console.log('Loaded existing quote data:', data);
+            console.log('📊 Raw API response data:', data);
             
             if (data.form_data && Object.keys(data.form_data).length > 0) {
-                // Wait a bit for form elements to be ready
-                await new Promise(resolve => setTimeout(resolve, 100));
+                console.log('📋 Found form data with keys:', Object.keys(data.form_data));
+                console.log('📋 Form data values:', data.form_data);
+                
+                // Wait for form to be fully ready
+                await waitForFormReady();
                 
                 // Pre-fill the form with existing data
+                let filledCount = 0;
                 Object.keys(data.form_data).forEach(key => {
                     let element = quoteForm.elements[key];
                     
@@ -582,34 +592,69 @@ async function loadExistingQuoteData() {
                     
                     if (element) {
                         element.value = data.form_data[key];
-                        console.log(`Filled field ${key} with value: ${data.form_data[key]}`);
+                        console.log(`✅ Filled field ${key} with value: "${data.form_data[key]}"`);
+                        filledCount++;
                     } else {
-                        console.log(`⚠️  Field ${key} not found in form`);
+                        console.log(`❌ Field ${key} not found in form`);
                     }
                 });
                 
+                console.log(`📝 Filled ${filledCount} out of ${Object.keys(data.form_data).length} fields`);
+                
                 // Restore unit buttons if we have unit data
                 if (data.form_data.widthUnit || data.form_data.heightUnit) {
-                    console.log('Restoring unit buttons from form data:', {
+                    console.log('🔧 Restoring unit buttons from form data:', {
                         widthUnit: data.form_data.widthUnit,
                         heightUnit: data.form_data.heightUnit
                     });
                     restoreUnitButtonsFromData(data.form_data);
                 } else {
-                    console.log('No unit data found in form data, using defaults');
+                    console.log('🔧 No unit data found in form data, using defaults');
                     resetUnitButtons();
                 }
                 
                 console.log('✅ Form successfully loaded with existing data');
             } else {
-                console.log('No existing form data found');
+                console.log('⚠️  No form_data found or form_data is empty');
+                console.log('Data structure:', data);
                 resetUnitButtons();
             }
+        } else {
+            console.log('❌ API response not OK:', response.status, response.statusText);
         }
     } catch (error) {
-        console.error('Error loading existing quote data:', error);
+        console.error('❌ Error loading existing quote data:', error);
         resetUnitButtons();
     }
+}
+
+function waitForFormReady() {
+    return new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        
+        const checkForm = () => {
+            attempts++;
+            console.log(`🔄 Checking if form is ready (attempt ${attempts})...`);
+            
+            // Check if key form elements exist
+            const widthField = quoteForm.elements['width'];
+            const materialField = quoteForm.elements['materialPreference'];
+            
+            if (widthField && materialField) {
+                console.log('✅ Form is ready, proceeding with data loading');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                console.log('⚠️  Form not ready after maximum attempts, proceeding anyway');
+                resolve();
+            } else {
+                console.log('⏳ Form not ready yet, waiting...');
+                setTimeout(checkForm, 100);
+            }
+        };
+        
+        checkForm();
+    });
 }
 
 function restoreUnitButtonsFromData(formData) {
@@ -997,5 +1042,78 @@ function testLoadQuoteData() {
         });
 }
 
+function testDatabaseConnection() {
+    console.log('🧪 Testing database connection...');
+    
+    // Test the MongoDB status endpoint
+    fetch('/mongodb-status')
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 MongoDB Status:', data);
+        })
+        .catch(error => {
+            console.error('❌ Error checking MongoDB status:', error);
+        });
+    
+    // Test the test-mongodb endpoint
+    fetch('/test-mongodb')
+        .then(response => response.json())
+        .then(data => {
+            console.log('📊 MongoDB Connection Test:', data);
+        })
+        .catch(error => {
+            console.error('❌ Error testing MongoDB connection:', error);
+        });
+}
+
+function testQuoteDataStorage() {
+    console.log('🧪 Testing quote data storage...');
+    
+    // Test saving some data
+    const testData = {
+        session_id: sessionId,
+        email: 'test@example.com',
+        form_data: {
+            width: '24',
+            height: '36',
+            widthUnit: 'inches',
+            heightUnit: 'inches',
+            materialPreference: 'metal',
+            illumination: 'led-backlit',
+            installationSurface: 'brick-wall',
+            cityState: 'New York, NY',
+            budget: '1000-2500',
+            placement: 'outdoor',
+            deadline: 'standard',
+            additionalNotes: 'Test data for debugging'
+        }
+    };
+    
+    fetch('/save-quote', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(testData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('📊 Save Quote Response:', data);
+        
+        if (data.success) {
+            console.log('✅ Test data saved successfully, now testing retrieval...');
+            // Test retrieving the data
+            setTimeout(() => {
+                testLoadQuoteData();
+            }, 1000);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error saving test data:', error);
+    });
+}
+
 // Add to global scope for testing
 window.testLoadQuoteData = testLoadQuoteData;
+window.testDatabaseConnection = testDatabaseConnection;
+window.testQuoteDataStorage = testQuoteDataStorage;

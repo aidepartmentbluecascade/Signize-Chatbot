@@ -118,6 +118,16 @@ Email Collection Process:
 - CRITICAL: Once email is collected, NEVER ask for it again in the same conversation.
 - CRITICAL: If customer says "Hi" or similar greeting and email is already collected, respond with "Hello! How can I help you with your sign needs today?" - DO NOT ask for email again.
 - CRITICAL: Even if the conversation seems to restart or customer says "Hi" again, if you already have their email, do NOT ask for it again.
+- CRITICAL: Email persists throughout the entire session - if customer says "bye" and then starts talking again, they still have the same email address.
+- CRITICAL: Only ask for email again if this is a completely new session or if the email was never collected.
+
+SESSION MANAGEMENT & EMAIL PERSISTENCE:
+- Email addresses are collected once per session and persist throughout the entire conversation
+- If a customer says "bye", "goodbye", or similar closing phrases, the email is still remembered
+- When the customer starts talking again in the same session, greet them warmly but do NOT ask for email again
+- The email address is stored in the session and should be used for all subsequent interactions
+- Only reset email collection if the session is completely new or if there's a technical issue
+- This prevents the frustrating experience of asking for email multiple times in one session
 
 Quote/Mockup Process:
 ONLY when a customer mentions they want a "mockup" or "quote" AND has already provided their email address, respond with:
@@ -511,12 +521,34 @@ def generate_sign_nize_response(client, user_message, session_data):
                     session_data["email"] = email_value
                     break
     
-        # Add simplified context instructions
+    # Add email information to the system prompt
+    email_context = ""
+    if email_value:
+        email_context = f"""
+CURRENT SESSION EMAIL: {email_value}
+- This email has already been collected and verified
+- Do NOT ask for email again in this session
+- Use this email for all quote requests and order tracking
+- If customer says "bye" and then starts talking again, they still have the same email
+"""
+        print(f"📧 Email context injected: {email_value}")
+    else:
+        email_context = """
+CURRENT SESSION EMAIL: NOT COLLECTED
+- This is a new conversation or email not yet provided
+- Follow the email collection process for first message
+"""
+        print("📧 Email context: NOT COLLECTED")
+    
+    print(f"🔍 Email already collected: {email_already_collected}")
+    print(f"📧 Email value: {email_value}")
+    
+    # Add simplified context instructions
     context_instructions = f"""
     
 CONTEXT INSTRUCTIONS:
 1. CAREFULLY READ the full conversation history above.
-2. If this is the FIRST message in the conversation, ALWAYS ask for email first.
+2. If this is the customer's FIRST message in the conversation, ALWAYS ask for email first.
 3. If email is already collected, NEVER ask for it again - this is a CRITICAL rule.
 4. After email collection, ask "How can I help you with your sign needs today?"
 5. Handle order issues by collecting Order ID and phone number, then tell customer representative will contact them.
@@ -529,12 +561,15 @@ CONTEXT INSTRUCTIONS:
 12. CRITICAL: Questions about signs, materials, installation, pricing, etc. are ALWAYS relevant - answer them helpfully.
 13. CRITICAL: When customers ask about specific sign types (2D, 3D, metal, acrylic, etc.), provide detailed information about those types - NEVER give generic greetings.
 14. CRITICAL: Use the knowledge base to provide comprehensive answers about sign types, materials, and applications.
+15. CRITICAL: The email {email_value if email_value else 'has not been collected yet'} - use this information to determine if email collection is needed.
+16. CRITICAL: Email persists throughout the session - if customer says "bye" and then talks again, they still have the same email.
+17. CRITICAL: Only ask for email if this is a completely new session or if email was never collected.
 """
     
     # Order issue handling is now managed by the system prompt
     
     # Combine all context
-    full_prompt = system_prompt + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
+    full_prompt = system_prompt + email_context + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
     
     response = client.chat.completions.create(
         model="gpt-4o-mini",

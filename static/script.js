@@ -326,8 +326,13 @@ async function sendMessageToBot(message) {
 // Quote Form Functions
 function showQuoteForm() {
     quoteModal.classList.add('show');
-    // Initialize unit buttons to default state
-    resetUnitButtons();
+    // Initialize unit buttons to default state only if no previous data
+    if (!hasPreviousQuoteData()) {
+        resetUnitButtons();
+    } else {
+        // Restore previous unit selections from database
+        restoreUnitButtonsFromDatabase();
+    }
     // Pre-fill form if we have existing data
     loadExistingQuoteData();
 }
@@ -335,8 +340,8 @@ function showQuoteForm() {
 function closeQuoteForm() {
     quoteModal.classList.remove('show');
     quoteForm.reset();
-    // Reset unit buttons to default state
-    resetUnitButtons();
+    // Don't reset unit buttons - preserve user selections for next time
+    // resetUnitButtons();
 }
 
 function closeQuoteSummary() {
@@ -358,6 +363,23 @@ function resetUnitButtons() {
             input.dataset.unit = 'inches';
         }
     });
+}
+
+function clearStoredQuoteData() {
+    // Clear any stored data in memory (not localStorage)
+    console.log('Cleared stored quote data from memory');
+}
+
+function startFreshQuote() {
+    clearStoredQuoteData();
+    resetUnitButtons();
+    quoteForm.reset();
+}
+
+function restoreUnitButtonsFromDatabase() {
+    // This will be called after loadExistingQuoteData loads the data
+    // The unit buttons will be restored in loadExistingQuoteData
+    console.log('Will restore unit buttons from database data');
 }
 
 async function handleQuoteSubmit(event) {
@@ -396,6 +418,8 @@ async function handleQuoteSubmit(event) {
     const widthUnit = widthInput.dataset.unit || 'inches';
     const heightUnit = heightInput.dataset.unit || 'inches';
     
+    console.log('Form submission - Units:', { widthUnit, heightUnit });
+    
     // Create formatted dimensions string
     if (width && height) {
         quoteData.sizeDimensions = `${width} ${widthUnit} × ${height} ${heightUnit}`;
@@ -403,6 +427,8 @@ async function handleQuoteSubmit(event) {
         quoteData.height = height;
         quoteData.widthUnit = widthUnit;
         quoteData.heightUnit = heightUnit;
+        
+        console.log('Formatted dimensions:', quoteData.sizeDimensions);
     }
     
     try {
@@ -493,6 +519,8 @@ async function loadExistingQuoteData() {
         const response = await fetch(`/get-quote/${sessionId}`);
         if (response.ok) {
             const data = await response.json();
+            console.log('Loaded existing quote data:', data);
+            
             if (data.form_data) {
                 // Pre-fill the form with existing data
                 Object.keys(data.form_data).forEach(key => {
@@ -501,10 +529,80 @@ async function loadExistingQuoteData() {
                         element.value = data.form_data[key];
                     }
                 });
+                
+                // Restore unit buttons if we have unit data
+                if (data.form_data.widthUnit || data.form_data.heightUnit) {
+                    console.log('Restoring unit buttons from form data:', {
+                        widthUnit: data.form_data.widthUnit,
+                        heightUnit: data.form_data.heightUnit
+                    });
+                    restoreUnitButtonsFromData(data.form_data);
+                } else {
+                    console.log('No unit data found in form data, using defaults');
+                    resetUnitButtons();
+                }
+            } else {
+                console.log('No existing form data found');
+                resetUnitButtons();
             }
         }
     } catch (error) {
         console.error('Error loading existing quote data:', error);
+        resetUnitButtons();
+    }
+}
+
+function restoreUnitButtonsFromData(formData) {
+    try {
+        console.log('Restoring unit buttons from data:', formData);
+        
+        if (formData.widthUnit) {
+            // Restore width unit
+            const widthButtons = document.querySelectorAll('[data-field="width"].unit-btn');
+            console.log(`Found ${widthButtons.length} width unit buttons`);
+            
+            widthButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.unit === formData.widthUnit) {
+                    btn.classList.add('active');
+                    console.log(`Activated width button: ${formData.widthUnit}`);
+                }
+            });
+            
+            // Update input dataset unit
+            const widthInput = document.getElementById('width');
+            if (widthInput) {
+                widthInput.dataset.unit = formData.widthUnit;
+                console.log(`Set width input unit to: ${formData.widthUnit}`);
+            }
+        }
+        
+        if (formData.heightUnit) {
+            // Restore height unit
+            const heightButtons = document.querySelectorAll('[data-field="height"].unit-btn');
+            console.log(`Found ${heightButtons.length} height unit buttons`);
+            
+            heightButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.unit === formData.heightUnit) {
+                    btn.classList.add('active');
+                    console.log(`Activated height button: ${formData.heightUnit}`);
+                }
+            });
+            
+            // Update input dataset unit
+            const heightInput = document.getElementById('height');
+            if (heightInput) {
+                heightInput.dataset.unit = formData.heightUnit;
+                console.log(`Set height input unit to: ${formData.heightUnit}`);
+            }
+        }
+        
+        console.log(`Successfully restored units: Width=${formData.widthUnit}, Height=${formData.heightUnit}`);
+    } catch (error) {
+        console.error('Error restoring unit buttons from form data:', error);
+        // Fall back to default if there's an error
+        resetUnitButtons();
     }
 }
 
@@ -778,3 +876,31 @@ window.SignNizeChat = {
     minimizeChat,
     closeChat
 };
+
+function testUnitButtons() {
+    console.log('Testing unit button functionality...');
+    
+    // Check if unit buttons exist
+    const widthButtons = document.querySelectorAll('[data-field="width"].unit-btn');
+    const heightButtons = document.querySelectorAll('[data-field="height"].unit-btn');
+    
+    console.log(`Found ${widthButtons.length} width buttons and ${heightButtons.length} height buttons`);
+    
+    // Check current active states
+    widthButtons.forEach(btn => {
+        console.log(`Width button ${btn.dataset.unit}: ${btn.classList.contains('active') ? 'active' : 'inactive'}`);
+    });
+    
+    heightButtons.forEach(btn => {
+        console.log(`Height button ${btn.dataset.unit}: ${btn.classList.contains('active') ? 'active' : 'inactive'}`);
+    });
+    
+    // Check input dataset units
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    console.log('Input dataset units:', {
+        width: widthInput?.dataset.unit || 'not set',
+        height: heightInput?.dataset.unit || 'not set'
+    });
+}

@@ -1,0 +1,23 @@
+{
+  "session_id": "session_1755076623311_kl9ngdgrl",
+  "timestamp": "2025-08-13T14:44:24.972767",
+  "messages": [
+    {
+      "role": "user",
+      "content": "i need to upload a log"
+    },
+    {
+      "role": "assistant",
+      "content": "Sure! Please go ahead and upload your logo file, and I'll take care of the next steps once it's uploaded."
+    },
+    {
+      "role": "user",
+      "content": "I've uploaded my logo: Screenshot 2025-05-30 160926.png"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for uploading your logo! That's perfect! To create an accurate mockup and quote, I just need a few more details.\n\nWhat are the desired measurements for the sign?"
+    }
+  ],
+  "message_count": 4
+}

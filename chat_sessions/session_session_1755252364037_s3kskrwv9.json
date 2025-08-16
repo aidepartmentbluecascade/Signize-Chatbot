@@ -1,0 +1,15 @@
+{
+  "session_id": "session_1755252364037_s3kskrwv9",
+  "timestamp": "2025-08-15T15:06:12.832563",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How can I assist you today? If you have any questions about signage or need help with a quote or mockup, feel free to let me know!"
+    }
+  ],
+  "message_count": 2
+}

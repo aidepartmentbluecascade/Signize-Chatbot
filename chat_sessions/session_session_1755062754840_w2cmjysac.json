@@ -1,0 +1,23 @@
+{
+  "session_id": "session_1755062754840_w2cmjysac",
+  "timestamp": "2025-08-13T10:26:40.804211",
+  "messages": [
+    {
+      "role": "user",
+      "content": "My email is ahmad2720000@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for sharing your email, Ahmad! \n\nCould you please tell me a bit about what kind of sign you're looking for — and any other details you'd like us to know?"
+    },
+    {
+      "role": "user",
+      "content": "I need a 4 by 4 metal sign"
+    },
+    {
+      "role": "assistant",
+      "content": "That sounds great, Ahmad! To create an accurate mockup and quote, I just need a few more details. \n\nWhat are the desired measurements for the sign?"
+    }
+  ],
+  "message_count": 4
+}

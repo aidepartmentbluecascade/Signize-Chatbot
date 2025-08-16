@@ -1,0 +1,47 @@
+{
+  "session_id": "session_1755328798157_qpb4xa9xt",
+  "timestamp": "2025-08-16T12:22:57.231481",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hi there! I'd be happy to help you with your sign needs. First, could you please provide your email address so I can save your information and follow up with you?"
+    },
+    {
+      "role": "user",
+      "content": "My email is ahmad2720000@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How can I help you with your sign needs today?"
+    },
+    {
+      "role": "user",
+      "content": "I wanted to track my order"
+    },
+    {
+      "role": "assistant",
+      "content": "Could you please provide your Order ID? This will help me assist you better with tracking your order."
+    },
+    {
+      "role": "user",
+      "content": "23412"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for providing your Order ID. Could you please share your phone number as well? This will help us reach out to you with more information about your order."
+    },
+    {
+      "role": "user",
+      "content": "+923146661627"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for providing those details. Our customer service representative will reach out to you within 24 hours with more information about your order. Is there anything else I can help you with today?"
+    }
+  ],
+  "message_count": 10
+}

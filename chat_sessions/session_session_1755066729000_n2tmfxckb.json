@@ -1,0 +1,95 @@
+{
+  "session_id": "session_1755066729000_n2tmfxckb",
+  "timestamp": "2025-08-13T12:24:09.167931",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hey there! To ensure we can connect if we get disconnected, can you please share your email address?"
+    },
+    {
+      "role": "user",
+      "content": "My email is ahmad2720000@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks a ton for sharing your email, Ahmad! Could you please tell me a bit about what kind of sign you're looking for — and any other details you'd like us to know?"
+    },
+    {
+      "role": "user",
+      "content": "I need a 4 by 4 metal sign"
+    },
+    {
+      "role": "assistant",
+      "content": "Gotcha! A 4 by 4 metal sign sounds awesome! To create an accurate mockup and quote, I just need a few more details. \n\nWhat material preferences do you have for the sign — like metal, acrylic, or something else?"
+    },
+    {
+      "role": "user",
+      "content": "Metal"
+    },
+    {
+      "role": "assistant",
+      "content": "Totally get it! Metal it is! \n\nNow, where will this sign be installed? On a brick wall, concrete, drywall, or another type of surface?"
+    },
+    {
+      "role": "user",
+      "content": "DryWall"
+    },
+    {
+      "role": "assistant",
+      "content": "That's perfect! Thanks for clarifying that the sign will be installed on drywall. \n\nDo you have any deadlines or specific dates by which you need the sign to be delivered? Our standard turnaround time is fifteen to seventeen business days."
+    },
+    {
+      "role": "user",
+      "content": "In 50 days"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect — we'll make sure it's delivered on time! \n\nNow, in which city and state do you want the sign to be delivered?"
+    },
+    {
+      "role": "user",
+      "content": "Tuijana mexico"
+    },
+    {
+      "role": "assistant",
+      "content": "Awesome! Thanks for sharing that it's going to Tijuana, Mexico. \n\nDo you need assistance with permit and installation?"
+    },
+    {
+      "role": "user",
+      "content": "No"
+    },
+    {
+      "role": "assistant",
+      "content": "Gotcha! No worries at all. \n\nNow, do you have a price point or a budget in mind for this sign?"
+    },
+    {
+      "role": "user",
+      "content": "1000$"
+    },
+    {
+      "role": "assistant",
+      "content": "That's pretty sweet! Thanks for sharing your budget of $1000. \n\nNow, do you have any existing logo files or design elements you'd like to incorporate into your sign? If so, please upload them so our designers can work with your brand assets."
+    },
+    {
+      "role": "user",
+      "content": "I've uploaded my logo: Screenshot 2025-05-30 160926.png"
+    },
+    {
+      "role": "assistant",
+      "content": "That's perfect! Thank you for uploading your logo. Our designers will definitely work with that to create something awesome for you. \n\nJust to recap, we have your sign details as follows:\n- Size: 4 by 4 feet\n- Material: Metal\n- Installation Surface: Drywall\n- Deadline: 50 days\n- Location: Tijuana, Mexico\n- Budget: $1000\n- Logo: Uploaded\n\nAny changes in the requirement?"
+    },
+    {
+      "role": "user",
+      "content": "I've uploaded my logo: Screenshot 2025-05-30 160908.png"
+    },
+    {
+      "role": "assistant",
+      "content": "That's perfect! Thank you for uploading your logo. Our designers will definitely work with that to create something awesome for you.\n\nJust to recap, we have your sign details as follows:\n- Size: 4 by 4 feet\n- Material: Metal\n- Installation Surface: Drywall\n- Deadline: 50 days\n- Location: Tijuana, Mexico\n- Budget: $1000\n- Logo: Uploaded\n\nAny changes in the requirement?"
+    }
+  ],
+  "message_count": 22
+}

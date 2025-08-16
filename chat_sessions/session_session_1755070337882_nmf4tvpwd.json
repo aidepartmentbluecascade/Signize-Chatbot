@@ -1,0 +1,79 @@
+{
+  "session_id": "session_1755070337882_nmf4tvpwd",
+  "timestamp": "2025-08-13T12:34:13.827487",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hey there! To ensure we can connect if we get disconnected, can you please share your email address?"
+    },
+    {
+      "role": "user",
+      "content": "My email is ahmad2720000@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks a ton for sharing your email, Ahmad! Could you please tell me a bit about what kind of sign you're looking for — and any other details you'd like us to know?"
+    },
+    {
+      "role": "user",
+      "content": "I am looking for a 4 by 4 metal sign in budget of 10000$"
+    },
+    {
+      "role": "assistant",
+      "content": "That's pretty sweet! To create an accurate mockup and quote, I just need a few more details. \n\nWhat installation surface will this sign be placed on? Is it a brick wall, concrete, drywall, or something else?"
+    },
+    {
+      "role": "user",
+      "content": "Brick Wall"
+    },
+    {
+      "role": "assistant",
+      "content": "Gotcha! A brick wall is a solid choice. \n\nNow, do you have a specific deadline or installation date by which you need the sign to be delivered?"
+    },
+    {
+      "role": "user",
+      "content": "In 50 days"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect — we'll make sure it's delivered on time! \n\nIs the sign going to be installed indoors or outdoors?"
+    },
+    {
+      "role": "user",
+      "content": "Outdoors"
+    },
+    {
+      "role": "assistant",
+      "content": "Alrighty! An outdoor sign sounds great. \n\nIn which city and state do you want the sign to be delivered?"
+    },
+    {
+      "role": "user",
+      "content": "Tuijana Mexico"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for that! Just to confirm, you meant Tijuana, Mexico, right? \n\nDo you need assistance with permit and installation?"
+    },
+    {
+      "role": "user",
+      "content": "Nope"
+    },
+    {
+      "role": "assistant",
+      "content": "Gotcha! No worries at all. \n\nDo you have a price point or a budget in mind for this sign?"
+    },
+    {
+      "role": "user",
+      "content": "10000$"
+    },
+    {
+      "role": "assistant",
+      "content": "That's perfect! Thank you for clarifying that. \n\nDo you have any specific design or content requirements for the sign, like text or graphics you'd like to include?"
+    }
+  ],
+  "message_count": 18
+}

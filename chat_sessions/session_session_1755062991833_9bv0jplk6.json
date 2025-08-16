@@ -1,0 +1,15 @@
+{
+  "session_id": "session_1755062991833_9bv0jplk6",
+  "timestamp": "2025-08-13T10:30:00.317186",
+  "messages": [
+    {
+      "role": "user",
+      "content": "My email is ahmad2720000@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for sharing your email, Ahmad! \n\nCould you please tell me a bit about what kind of sign you're looking for — and any other details you'd like us to know?"
+    }
+  ],
+  "message_count": 2
+}

@@ -1,0 +1,23 @@
+{
+  "session_id": "session_1755326269265_rx99jvcad",
+  "timestamp": "2025-08-16T11:43:00.273897",
+  "messages": [
+    {
+      "role": "user",
+      "content": "I want a mockup and quote for a custom sign."
+    },
+    {
+      "role": "assistant",
+      "content": "Hi there! I'd be happy to help you with your sign needs. First, could you please provide your email address so I can save your information and follow up with you?\n\nI'd be happy to help you get a quote! Let me open our quote form so you can fill out all the necessary information in one place."
+    },
+    {
+      "role": "user",
+      "content": "I have submitted my quote request with all the details."
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Please email your logo files to info@signize.us so our designers can work with your brand assets. We'll review your requirements and get back to you with a mockup and quote within a few hours. If you have any other questions or need further assistance, feel free to ask!\n\nI'd be happy to help you get a quote! Let me open our quote form so you can fill out all the necessary information in one place."
+    }
+  ],
+  "message_count": 4
+}

@@ -1,0 +1,39 @@
+{
+  "session_id": "session_1755069862803_bguhva5pw",
+  "timestamp": "2025-08-13T12:25:20.437249",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi"
+    },
+    {
+      "role": "assistant",
+      "content": "Hey there! To ensure we can connect if we get disconnected, can you please share your email address?"
+    },
+    {
+      "role": "user",
+      "content": "sdf"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing that! Just to confirm, could you please provide a valid email address so we can stay in touch?"
+    },
+    {
+      "role": "user",
+      "content": "My email is ahmad2720000@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for that, Ahmad! Could you please tell me a bit about what kind of sign you're looking for — and any other details you'd like us to know?"
+    },
+    {
+      "role": "user",
+      "content": "I need a 5 by 4 metal sign"
+    },
+    {
+      "role": "assistant",
+      "content": "Gotcha! That's a great size for a sign. To create an accurate mockup and quote, I just need a few more details. \n\nDo you have any material preferences for the sign — like metal, acrylic, or something else?"
+    }
+  ],
+  "message_count": 8
+}

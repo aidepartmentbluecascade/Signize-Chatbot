@@ -135,13 +135,32 @@
                 </div>
                 <div class="modal-body">
                     <form id="quoteForm">
+                        <!-- Logo Upload Section -->
                         <div class="form-group">
-                            <label for="sizeDimensions">Size & Dimensions *</label>
+                            <label for="logoUploads">Logo Files (Optional)</label>
+                            <div class="logo-upload-container">
+                                <div class="logo-upload-area" id="logoUploadArea">
+                                    <div class="logo-upload-prompt">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Click to upload logo files or drag and drop</p>
+                                        <p class="upload-hint">Supports: JPG, PNG, PDF, AI, EPS (Max 10MB each)</p>
+                                    </div>
+                                    <input type="file" id="logoFileInput" name="logos" multiple accept=".jpg,.jpeg,.png,.pdf,.ai,.eps" style="display: none;">
+                                </div>
+                                <div class="logo-preview-container" id="logoPreviewContainer" style="display: none;">
+                                    <h4>Uploaded Logos:</h4>
+                                    <div class="logo-preview-list" id="logoPreviewList"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sizeDimensions">Size & Dimensions (Optional)</label>
                             <div class="dimensions-container">
                                 <div class="dimension-input">
                                     <label for="width">Width</label>
                                     <div class="input-with-unit">
-                                        <input type="number" id="width" name="width" placeholder="Enter width" step="0.01" min="0" required>
+                                        <input type="number" id="width" name="width" placeholder="Enter width" step="0.01" min="0">
                                         <div class="unit-buttons">
                                             <button type="button" class="unit-btn active" data-unit="inches" data-field="width">Inches</button>
                                             <button type="button" class="unit-btn" data-unit="feet" data-field="width">Feet</button>
@@ -151,7 +170,7 @@
                                 <div class="dimension-input">
                                     <label for="height">Height</label>
                                     <div class="input-with-unit">
-                                        <input type="number" id="height" name="height" placeholder="Enter height" step="0.01" min="0" required>
+                                        <input type="number" id="height" name="height" placeholder="Enter height" step="0.01" min="0">
                                         <div class="unit-buttons">
                                             <button type="button" class="unit-btn active" data-unit="inches" data-field="height">Inches</button>
                                             <button type="button" class="unit-btn" data-unit="feet" data-field="height">Feet</button>
@@ -163,9 +182,9 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="materialPreference">Material Preference *</label>
-                            <select id="materialPreference" name="materialPreference" required>
-                                <option value="">Select material</option>
+                            <label for="materialPreference">Material Preference (Optional)</label>
+                            <select id="materialPreference" name="materialPreference">
+                                <option value="">Select material (optional)</option>
                                 <option value="metal">Metal</option>
                                 <option value="acrylic">Acrylic</option>
                                 <option value="aluminum">Aluminum</option>
@@ -175,9 +194,9 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="illumination">Illumination *</label>
-                            <select id="illumination" name="illumination" required>
-                                <option value="">Select lighting option</option>
+                            <label for="illumination">Illumination (Optional)</label>
+                            <select id="illumination" name="illumination">
+                                <option value="">Select lighting option (optional)</option>
                                 <option value="no-lighting">No lighting</option>
                                 <option value="led-backlit">LED Backlit</option>
                                 <option value="front-lit">Front Lit</option>
@@ -187,9 +206,9 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="installationSurface">Installation Surface *</label>
-                            <select id="installationSurface" name="installationSurface" required>
-                                <option value="">Select surface type</option>
+                            <label for="installationSurface">Installation Surface (Optional)</label>
+                            <select id="installationSurface" name="installationSurface">
+                                <option value="">Select surface type (optional)</option>
                                 <option value="brick-wall">Brick Wall</option>
                                 <option value="concrete">Concrete</option>
                                 <option value="drywall">Drywall</option>
@@ -200,14 +219,14 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="cityState">City & State *</label>
-                            <input type="text" id="cityState" name="cityState" placeholder="e.g., New York, NY" required>
+                            <label for="cityState">City & State (Optional)</label>
+                            <input type="text" id="cityState" name="cityState" placeholder="e.g., New York, NY">
                         </div>
                         
                         <div class="form-group">
-                            <label for="budget">Budget Range *</label>
-                            <select id="budget" name="budget" required>
-                                <option value="">Select budget range</option>
+                            <label for="budget">Budget Range (Optional)</label>
+                            <select id="budget" name="budget">
+                                <option value="">Select budget range (optional)</option>
                                 <option value="under-500">Under $500</option>
                                 <option value="500-1000">$500 - $1,000</option>
                                 <option value="1000-2500">$1,000 - $2,500</option>
@@ -219,9 +238,9 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="placement">Placement *</label>
-                            <select id="placement" name="placement" required>
-                                <option value="">Select placement</option>
+                            <label for="placement">Placement (Optional)</label>
+                            <select id="placement" name="placement">
+                                <option value="">Select placement (optional)</option>
                                 <option value="indoor">Indoor</option>
                                 <option value="outdoor">Outdoor</option>
                                 <option value="both">Both Indoor & Outdoor</option>
@@ -229,9 +248,9 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="deadline">Deadline *</label>
-                            <select id="deadline" name="deadline" required>
-                                <option value="">Select timeline</option>
+                            <label for="deadline">Deadline (Optional)</label>
+                            <select id="deadline" name="deadline">
+                                <option value="">Select timeline (optional)</option>
                                 <option value="standard">Standard (15-17 business days)</option>
                                 <option value="rush">Rush (12 business days - 20% additional cost)</option>
                                 <option value="flexible">Flexible</option>
@@ -239,7 +258,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="additionalNotes">Additional Notes</label>
+                            <label for="additionalNotes">Additional Notes (Optional)</label>
                             <textarea id="additionalNotes" name="additionalNotes" placeholder="Any additional requirements or special requests..."></textarea>
                         </div>
                         

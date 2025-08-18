@@ -11,6 +11,7 @@ import time
 import gspread
 from google.oauth2.service_account import Credentials
 from mongodb_operations import mongodb_manager
+import dropbox
 
 
 print("__name__ is:", __name__)
@@ -65,6 +66,40 @@ except Exception as e:
 
 # Initialize OpenAI Client
 client = OpenAI(api_key=openai_key)
+
+# Dropbox configuration
+DROPBOX_ACCESS_TOKEN = "sl.u.AF4x65ThacbAYtb7n8P1sdFtphrXInO1hi7XXi4V713kPBOyu14h72A39pPQtbrBGhG_dASY_yHxhr9B5HOlxnAFdHUSZTTyaZ0qNL0vGDyGviNDNl-qViVSvrx1tDnrCBqo8AD2e9TCPOOdqCD6G8DI_CATAHXGAMF58HDgYeqzXTAma6A1GjruHg9vxuuuvBbsfzcJRLwssQaHBWA3Mq0sKnHdHg0xYgRaRRb5S8BFEoNWJrjYg2OvQkTjltyzW6u_TTPm4RlPDoto9s-Cnb_fLrekJVl6sNMVKlpxduXgkNYzoDqT95Cc-Bp4dMDTOQEoT8CPKOmvvKMro0gZmRGDMBfU8TtiF9ymD0DweusHl1tspx0BdQgE2q50UwwhCZfZ6rQ0q0cVMIH5vZ68POW1UCtqlEL2zo6ZHkwlg8XlceFf56RJqR47g2eAZoZoCHZjwjBBBTci9r5qVNLR0DmhqeFsDTE7OXM6Ab678oOQhrPTCCUC4uGQdA03CXGjMRxZTDGRcGbdo5FLLRhRrXcs0E1nhTGFLDXBRKrLoxz_R-kdpXXslspvh4d5y6fbgx7Fg1j9nZGW3Y38tP6tqS0BcNYlwdGCnT2Ho9dYCDsvocbQ9DoypFJqNqj1dzEbyRjHScYWDnpCh7o2x1v9M5cdCv51esVjTby0iRGxYPbTFZrxF9I18bkXsRdGIG9vxzZ9aD84V5-afnUYH_I20Cy7QWakqcLEswlQhCwdBTPFtW0M3fiH_BuqXmKYTaBHnpCwolxZ470pbqob8Uw2Cp1CoO2HG7Q0NE7CMfGczXhghZUDqG-V8hNmouxldnj6X9yotpZJw3XR2VcHkyg_7K1yMhN2LB5Dw8VgAO4XUkItcT-lIZst18Xbr_YjGtp8qz26vqFUMek5dmjSL5v8sNG38INn0aO1woqkdyrBKd4ZDHKZOwBRjVYx1uJTxh8EQAPUvXgnDKi0e8OE5oUTuLItk06I08S5fdXHV1Jexdy-vjzKxhh42a0a1rPY8KzRbHYim8MBfW0xsWcgSL-57dn0R16zGMJr703FFkWisoUMJUSq7dNOSQ20lS8B81Eb9A2ymXFbCEHKucP2LeHlQHCQhmsy9a5vaz9idJV3SJMGqo3P2JqzqvBFQzJ-RGSR7qJhS1sF3NOKS3vbwMu7K59YMqAj6d5R0vIlRGwtmkJ3a9pItU8G6HSJdHdtiyKHjRRc_MRwz0OPzQblMPS1TeBPmsZ2FoH3hp_Um-8bPVW0rMTpaNT-KOKxhBCC7_tX4jzMLT2mbkKHCFG6Xlm0UILZG4kUeWRO1Krtp9GW5feTLRC7Wjp_b1R_Z3DHATaEUDsmoJgB7cDGyJ4hducOqsSB2rfzJd4QmBrIATSOELFUPVColxpWVq5cxc9TTRYz7Z7-RooKJKS-zqGZMIQsL407"
+
+def upload_to_dropbox(local_file_path, dropbox_path):
+    """Upload file to Dropbox and return public link"""
+    try:
+        dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+        
+        # Upload file
+        with open(local_file_path, "rb") as f:
+            dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+        print(f"Uploaded {local_file_path} to {dropbox_path}")
+
+        # Create a shared link
+        try:
+            link_metadata = dbx.sharing_create_shared_link_with_settings(dropbox_path)
+        except dropbox.exceptions.ApiError as e:
+            # If link already exists, fetch it
+            if isinstance(e.error, dropbox.sharing.CreateSharedLinkWithSettingsError):
+                links = dbx.sharing_list_shared_links(dropbox_path).links
+                if links:
+                    link_metadata = links[0]
+                else:
+                    raise
+            else:
+                raise
+
+        # Modify link to make it direct-download
+        url = link_metadata.url.replace("?dl=0", "?dl=1")
+        return url
+    except Exception as e:
+        print(f"Dropbox upload error: {e}")
+        return None
 
 # Flask application setup
 app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -266,7 +301,18 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
             role = "User" if message["role"] == "user" else "Assistant"
             conversation_text += f"{role}: {message['content']}\n"
         
-
+        # Get logo URLs from session data and add to conversation
+        logo_urls = []
+        if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
+            for logo in chat_sessions[session_id]["logos"]:
+                if "dropbox_url" in logo:
+                    logo_urls.append(logo["dropbox_url"])
+        
+        # Add logo URLs to conversation if available
+        if logo_urls:
+            conversation_text += "\n\n--- LOGO FILES ---\n"
+            for i, url in enumerate(logo_urls, 1):
+                conversation_text += f"Logo {i}: {url}\n"
         
         # Prepare session data - all in one row
         session_data = {
@@ -303,9 +349,53 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                         break
                 
                 if session_row:
-                    # Update the existing row with new conversation data
-                    worksheet.update(f'A{session_row}:F{session_row}', [row])
-                    print(f"✅ Session {session_id} updated in Google Sheets (row {session_row}) - {len(chat_history)} messages")
+                    # Get existing conversation and append new messages
+                    existing_conversation = ""
+                    if len(row_data) > 4:  # Make sure conversation column exists
+                        existing_conversation = row_data[4] if row_data[4] else ""
+                    
+                    # Append new messages to existing conversation
+                    updated_conversation = existing_conversation
+                    if existing_conversation:
+                        updated_conversation += "\n\n--- New Messages ---\n"
+                    
+                    # Add only the new messages (messages after the existing count)
+                    existing_count = int(row_data[3]) if len(row_data) > 3 and row_data[3].isdigit() else 0
+                    new_messages = chat_history[existing_count:]
+                    
+                    for msg in new_messages:
+                        role = msg.get("role", "unknown")
+                        content = msg.get("content", "")
+                        if role == "user":
+                            updated_conversation += f"\n👤 User: {content}"
+                        elif role == "assistant":
+                            updated_conversation += f"\n🤖 Assistant: {content}"
+                    
+                    # Get logo URLs and add to conversation if not already present
+                    logo_urls = []
+                    if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
+                        for logo in chat_sessions[session_id]["logos"]:
+                            if "dropbox_url" in logo:
+                                logo_urls.append(logo["dropbox_url"])
+                    
+                    # Add logo URLs if available and not already in conversation
+                    if logo_urls and "--- LOGO FILES ---" not in updated_conversation:
+                        updated_conversation += "\n\n--- LOGO FILES ---\n"
+                        for i, url in enumerate(logo_urls, 1):
+                            updated_conversation += f"Logo {i}: {url}\n"
+                    
+                    # Update the row with new conversation and message count
+                    updated_row = [
+                        session_data["session_id"],
+                        session_data["email"],
+                        session_data["timestamp"],
+                        session_data["message_count"],
+                        updated_conversation,
+                        session_data["status"]
+                    ]
+                    
+                    worksheet.update(f'A{session_row}:F{session_row}', [updated_row])
+                    print(f"✅ Session {session_id} updated in Google Sheets (row {session_row}) - {len(new_messages)} new messages added")
                     return True
                 else:
                     print(f"⚠️  Session {session_id} not found in sheet, appending new row")
@@ -1015,7 +1105,19 @@ def save_quote():
         return jsonify({"error": "Session ID, email, and form data are required"}), 400
     
     try:
+        # Save to MongoDB
         result = mongodb_manager.save_quote_data(session_id, email, form_data)
+        
+        # Update Google Sheets with the latest session data (including logo URLs)
+        if result["success"] and session_id in chat_sessions:
+            try:
+                # Force update Google Sheets with current session data
+                update_existing = session_id in saved_sessions
+                save_session_to_sheets(session_id, email, chat_sessions[session_id]["messages"], update_existing)
+                print(f"✅ Google Sheets updated with latest session data for {session_id}")
+            except Exception as sheet_error:
+                print(f"⚠️  Failed to update Google Sheets: {sheet_error}")
+        
         if result["success"]:
             return jsonify({
                 "success": True,
@@ -1078,17 +1180,40 @@ def upload_logo():
         logos_dir = os.path.join('data', 'logos', session_id)
         os.makedirs(logos_dir, exist_ok=True)
         
-        # Save the file
+        # Save the file locally first
         filename = f"logo_{int(time.time())}_{file.filename}"
         file_path = os.path.join(logos_dir, filename)
         file.save(file_path)
         
-        # For now, just return success (in a real app, you'd store this in a database)
-        return jsonify({
-            "success": True,
-            "message": f"Logo uploaded successfully: {filename}",
-            "logo_count": 1  # This would be dynamic in a real implementation
-        })
+        # Upload to Dropbox
+        dropbox_path = f"/logos/{session_id}/{filename}"
+        dropbox_url = upload_to_dropbox(file_path, dropbox_path)
+        
+        if dropbox_url:
+            # Store logo info in session or database
+            logo_info = {
+                "filename": filename,
+                "local_path": file_path,
+                "dropbox_url": dropbox_url,
+                "upload_time": datetime.now().isoformat()
+            }
+            
+            # For now, store in session (in production, use database)
+            if session_id not in chat_sessions:
+                chat_sessions[session_id] = {"logos": []}
+            elif "logos" not in chat_sessions[session_id]:
+                chat_sessions[session_id]["logos"] = []
+            
+            chat_sessions[session_id]["logos"].append(logo_info)
+            
+            return jsonify({
+                "success": True,
+                "message": f"Logo uploaded successfully: {filename}",
+                "dropbox_url": dropbox_url,
+                "logo_count": len(chat_sessions[session_id]["logos"])
+            })
+        else:
+            return jsonify({"success": False, "message": "Failed to upload to Dropbox"}), 500
         
     except Exception as e:
         return jsonify({"success": False, "message": f"Upload failed: {str(e)}"}), 500
@@ -1099,18 +1224,24 @@ def get_session_logos(session_id):
     print(f">>> Get logos endpoint hit for session {session_id}")
     
     try:
-        logos_dir = os.path.join('data', 'logos', session_id)
-        if os.path.exists(logos_dir):
-            logos = []
-            for filename in os.listdir(logos_dir):
-                if filename.startswith('logo_'):
-                    logos.append({
-                        "filename": filename,
-                        "public_url": f"/logos/{session_id}/{filename}"
-                    })
+        # Get logos from session data (which includes Dropbox URLs)
+        if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
+            logos = chat_sessions[session_id]["logos"]
             return jsonify({"logos": logos})
         else:
-            return jsonify({"logos": []})
+            # Fallback to local files if no session data
+            logos_dir = os.path.join('data', 'logos', session_id)
+            if os.path.exists(logos_dir):
+                logos = []
+                for filename in os.listdir(logos_dir):
+                    if filename.startswith('logo_'):
+                        logos.append({
+                            "filename": filename,
+                            "public_url": f"/logos/{session_id}/{filename}"
+                        })
+                return jsonify({"logos": logos})
+            else:
+                return jsonify({"logos": []})
     except Exception as e:
         return jsonify({"error": f"Failed to get logos: {str(e)}"}), 500
 

@@ -10,7 +10,12 @@ const emailFieldContainer = document.getElementById('emailFieldContainer');
 const emailInput = document.getElementById('emailInput');
 const emailSubmitBtn = document.getElementById('emailSubmitBtn');
 const emailValidation = document.getElementById('emailValidation');
-// REMOVED: Logo upload elements - not needed
+
+// Logo Upload Elements
+const logoUploadArea = document.getElementById('logoUploadArea');
+const logoFileInput = document.getElementById('logoFileInput');
+const logoPreviewContainer = document.getElementById('logoPreviewContainer');
+const logoPreviewList = document.getElementById('logoPreviewList');
 
 // Quote Form Elements
 const quoteModal = document.getElementById('quoteModal');
@@ -62,7 +67,17 @@ function initializeEventListeners() {
         }
     });
     
-    // REMOVED: Logo upload functionality - not needed
+    // Logo upload functionality
+    if (logoUploadArea && logoFileInput) {
+        logoUploadArea.addEventListener('click', () => logoFileInput.click());
+        
+        logoFileInput.addEventListener('change', handleLogoFileSelect);
+        
+        // Drag and drop functionality
+        logoUploadArea.addEventListener('dragover', handleDragOver);
+        logoUploadArea.addEventListener('dragleave', handleDragLeave);
+        logoUploadArea.addEventListener('drop', handleDrop);
+    }
     
     // Input focus and typing indicators
     messageInput.addEventListener('focus', function() {
@@ -93,6 +108,12 @@ function initializeEventListeners() {
     requestChanges.addEventListener('click', requestQuoteChanges);
     closeSummary.addEventListener('click', closeQuoteSummary);
     quoteForm.addEventListener('submit', handleQuoteSubmit);
+    
+    // Start fresh button
+    const startFreshBtn = document.getElementById('startFreshBtn');
+    if (startFreshBtn) {
+        startFreshBtn.addEventListener('click', startFreshQuote);
+    }
     
     // Close modals when clicking overlay
     quoteModal.addEventListener('click', function(e) {
@@ -230,28 +251,166 @@ function enableChatInput() {
     });
 }
 
-// REMOVED: All logo upload functions - not needed
+// Logo Upload Functions
+let uploadedLogos = [];
+
+function handleLogoFileSelect(event) {
+    const files = Array.from(event.target.files);
+    handleLogoFiles(files);
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    logoUploadArea.classList.add('dragover');
+}
+
+function handleDragLeave(event) {
+    event.preventDefault();
+    logoUploadArea.classList.remove('dragover');
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    logoUploadArea.classList.remove('dragover');
+    const files = Array.from(event.dataTransfer.files);
+    handleLogoFiles(files);
+}
+
+function handleLogoFiles(files) {
+    files.forEach(file => {
+        if (isValidLogoFile(file)) {
+            uploadLogoFile(file);
+        } else {
+            alert(`Invalid file: ${file.name}. Please upload JPG, PNG, PDF, AI, or EPS files under 10MB.`);
+        }
+    });
+}
+
+function isValidLogoFile(file) {
+    const validTypes = ['image/jpeg', 'image/png', 'application/pdf', 'application/postscript'];
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.ai', '.eps'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    const hasValidType = validTypes.includes(file.type);
+    const hasValidExtension = validExtensions.some(ext => 
+        file.name.toLowerCase().endsWith(ext)
+    );
+    const hasValidSize = file.size <= maxSize;
+    
+    return (hasValidType || hasValidExtension) && hasValidSize;
+}
+
+async function uploadLogoFile(file) {
+    const logoId = 'logo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // Add preview item
+    addLogoPreviewItem(logoId, file, 'uploading');
+    
+    try {
+        const formData = new FormData();
+        formData.append('logo', file);
+        formData.append('session_id', sessionId);
+        
+        const response = await fetch('/upload-logo', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            updateLogoPreviewItem(logoId, 'success', data.dropbox_url);
+            uploadedLogos.push({
+                id: logoId,
+                filename: file.name,
+                dropbox_url: data.dropbox_url
+            });
+        } else {
+            updateLogoPreviewItem(logoId, 'error');
+            console.error('Upload failed:', data.message);
+        }
+    } catch (error) {
+        updateLogoPreviewItem(logoId, 'error');
+        console.error('Upload error:', error);
+    }
+}
+
+function addLogoPreviewItem(logoId, file, status) {
+    const previewItem = document.createElement('div');
+    previewItem.className = 'logo-preview-item';
+    previewItem.id = logoId;
+    
+    const isImage = file.type.startsWith('image/');
+    const previewContent = isImage ? 
+        `<img src="${URL.createObjectURL(file)}" alt="${file.name}">` :
+        `<i class="fas fa-file" style="font-size: 48px; color: var(--text-light); margin-bottom: 8px;"></i>`;
+    
+    previewItem.innerHTML = `
+        ${previewContent}
+        <div class="logo-name">${file.name}</div>
+        <div class="logo-status ${status}">${status}</div>
+        <button class="remove-logo" onclick="removeLogo('${logoId}')">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="logo-upload-progress">
+            <div class="logo-upload-progress-bar" style="width: ${status === 'uploading' ? '50%' : '100%'}"></div>
+        </div>
+    `;
+    
+    logoPreviewList.appendChild(previewItem);
+    logoPreviewContainer.style.display = 'block';
+}
+
+function updateLogoPreviewItem(logoId, status, dropboxUrl = null) {
+    const previewItem = document.getElementById(logoId);
+    if (previewItem) {
+        const statusElement = previewItem.querySelector('.logo-status');
+        const progressBar = previewItem.querySelector('.logo-upload-progress-bar');
+        
+        statusElement.className = `logo-status ${status}`;
+        statusElement.textContent = status;
+        
+        if (status === 'success') {
+            progressBar.style.width = '100%';
+            progressBar.style.background = 'var(--success-color)';
+        } else if (status === 'error') {
+            progressBar.style.background = 'var(--error-color)';
+        }
+    }
+}
+
+function removeLogo(logoId) {
+    const previewItem = document.getElementById(logoId);
+    if (previewItem) {
+        previewItem.remove();
+        uploadedLogos = uploadedLogos.filter(logo => logo.id !== logoId);
+        
+        if (uploadedLogos.length === 0) {
+            logoPreviewContainer.style.display = 'none';
+        }
+    }
+}
 
 // Show uploaded logos
-// async function showUploadedLogos() {
-//     try {
-//         const response = await fetch(`/session/${sessionId}/logos`);
-//         const data = await response.json();
+async function showUploadedLogos() {
+    try {
+        const response = await fetch(`/session/${sessionId}/logos`);
+        const data = await response.json();
         
-//         if (data.logos && data.logos.length > 0) {
-//             const logoList = data.logos.map(logo => 
-//                 `• ${logo.filename} (${logo.public_url})`
-//             ).join('\n');
+        if (data.logos && data.logos.length > 0) {
+            const logoList = data.logos.map(logo => 
+                `• ${logo.filename} (${logo.dropbox_url || logo.public_url})`
+            ).join('\n');
             
-//             addMessage('ai', `Here are the logos you've uploaded:\n${logoList}`);
-//         } else {
-//             addMessage('ai', "You haven't uploaded any logos yet.");
-//         }
-//     } catch (error) {
-//         console.error('Error fetching logos:', error);
-//         addMessage('ai', "Sorry, I couldn't retrieve your uploaded logos.");
-//     }
-// }
+            addMessage('ai', `Here are the logos you've uploaded:\n${logoList}`);
+        } else {
+            addMessage('ai', "You haven't uploaded any logos yet.");
+        }
+    } catch (error) {
+        console.error('Error fetching logos:', error);
+        addMessage('ai', "Sorry, I couldn't retrieve your uploaded logos.");
+    }
+}
 
 // Send message function
 async function sendMessage() {
@@ -371,6 +530,10 @@ function showQuoteForm() {
 function closeQuoteForm() {
     quoteModal.classList.remove('show');
     quoteForm.reset();
+    // Clear uploaded logos
+    uploadedLogos = [];
+    logoPreviewList.innerHTML = '';
+    logoPreviewContainer.style.display = 'none';
     // Don't reset unit buttons - preserve user selections for next time
     // resetUnitButtons();
 }
@@ -405,6 +568,10 @@ function startFreshQuote() {
     clearStoredQuoteData();
     resetUnitButtons();
     quoteForm.reset();
+    // Clear uploaded logos
+    uploadedLogos = [];
+    logoPreviewList.innerHTML = '';
+    logoPreviewContainer.style.display = 'none';
 }
 
 async function handleQuoteSubmit(event) {
@@ -415,20 +582,23 @@ async function handleQuoteSubmit(event) {
         return;
     }
     
-    // Validate dimensions
+    // Validate dimensions if provided
     const widthInput = document.getElementById('width');
     const heightInput = document.getElementById('height');
     const width = widthInput.value.trim();
     const height = heightInput.value.trim();
     
-    if (!width || !height) {
-        alert('Please enter both width and height dimensions.');
-        return;
-    }
-    
-    if (isNaN(width) || isNaN(height) || parseFloat(width) <= 0 || parseFloat(height) <= 0) {
-        alert('Please enter valid positive numbers for dimensions.');
-        return;
+    // Only validate if both dimensions are provided
+    if (width || height) {
+        if (!width || !height) {
+            alert('Please enter both width and height dimensions, or leave both empty.');
+            return;
+        }
+        
+        if (isNaN(width) || isNaN(height) || parseFloat(width) <= 0 || parseFloat(height) <= 0) {
+            alert('Please enter valid positive numbers for dimensions.');
+            return;
+        }
     }
     
     const formData = new FormData(quoteForm);
@@ -456,6 +626,10 @@ async function handleQuoteSubmit(event) {
         
         console.log('📐 Formatted dimensions:', quoteData.sizeDimensions);
     }
+    
+    // Add logo information
+    quoteData.uploadedLogos = uploadedLogos;
+    quoteData.logoCount = uploadedLogos.length;
     
     console.log('📤 Submitting quote data:', quoteData);
     
@@ -494,40 +668,48 @@ async function handleQuoteSubmit(event) {
 }
 
 function showQuoteSummary(quoteData) {
+    const logoSection = quoteData.uploadedLogos && quoteData.uploadedLogos.length > 0 ? `
+        <div class="quote-summary-item">
+            <span class="quote-summary-label">Logo Files:</span>
+            <span class="quote-summary-value">${quoteData.uploadedLogos.length} file(s) uploaded</span>
+        </div>
+    ` : '';
+    
     const summaryHTML = `
         <div class="quote-summary">
             <h3>Your Quote Request Details</h3>
+            ${logoSection}
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Size & Dimensions:</span>
                 <span class="quote-summary-value">${quoteData.sizeDimensions || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Material:</span>
-                <span class="quote-summary-value">${quoteData.materialPreference}</span>
+                <span class="quote-summary-value">${quoteData.materialPreference || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Illumination:</span>
-                <span class="quote-summary-value">${quoteData.illumination}</span>
+                <span class="quote-summary-value">${quoteData.illumination || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Installation Surface:</span>
-                <span class="quote-summary-value">${quoteData.installationSurface}</span>
+                <span class="quote-summary-value">${quoteData.installationSurface || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Location:</span>
-                <span class="quote-summary-value">${quoteData.cityState}</span>
+                <span class="quote-summary-value">${quoteData.cityState || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Budget:</span>
-                <span class="quote-summary-value">${quoteData.budget}</span>
+                <span class="quote-summary-value">${quoteData.budget || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Placement:</span>
-                <span class="quote-summary-value">${quoteData.placement}</span>
+                <span class="quote-summary-value">${quoteData.placement || 'Not specified'}</span>
             </div>
             <div class="quote-summary-item">
                 <span class="quote-summary-label">Deadline:</span>
-                <span class="quote-summary-value">${quoteData.deadline}</span>
+                <span class="quote-summary-value">${quoteData.deadline || 'Not specified'}</span>
             </div>
             ${quoteData.additionalNotes ? `
             <div class="quote-summary-item">
@@ -537,7 +719,10 @@ function showQuoteSummary(quoteData) {
             ` : ''}
         </div>
         <p><strong>Next Steps:</strong></p>
-        <p>Please email your logo files to <a href="mailto:info@signize.us">info@signize.us</a> so our designers can work with your brand assets.</p>
+        ${quoteData.uploadedLogos && quoteData.uploadedLogos.length > 0 ? 
+            '<p>✅ Your logo files have been uploaded successfully and are ready for our designers to work with.</p>' : 
+            '<p>Please email your logo files to <a href="mailto:info@signize.us">info@signize.us</a> so our designers can work with your brand assets.</p>'
+        }
         <p>Our team will review your requirements and get back to you with a mockup and quote within a few hours.</p>
     `;
     

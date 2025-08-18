@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signize Chatbot API Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chat-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #fafafa;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: 20%;
+        }
+        .ai-message {
+            background-color: #e9ecef;
+            color: #333;
+            margin-right: 20%;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input, textarea, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        input, textarea {
+            flex: 1;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            min-width: 100px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .file-input {
+            margin: 10px 0;
+        }
+        .session-info {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        .quote-form {
+            display: none;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Signize Chatbot API Client</h1>
+        
+        <div class="session-info">
+            <strong>Session ID:</strong> <span id="sessionId">Not created yet</span>
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai-message">
+                Welcome! I'm your Signize customer support assistant. How can I help you today?
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="messageInput" placeholder="Type your message..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="email" id="emailInput" placeholder="Your email (optional)" />
+            <button onclick="setEmail()">Set Email</button>
+        </div>
+        
+        <div class="file-input">
+            <input type="file" id="fileInput" multiple accept="image/*,.pdf,.ai,.eps" />
+            <button onclick="uploadFiles()">Upload Logos</button>
+        </div>
+        
+        <div class="quote-form" id="quoteForm">
+            <h3>Quote Request Form</h3>
+            <div class="form-group">
+                <label>Size & Dimensions:</label>
+                <input type="text" id="sizeInput" placeholder="e.g., 2x3 feet" />
+            </div>
+            <div class="form-group">
+                <label>Material:</label>
+                <select id="materialInput">
+                    <option value="">Select material</option>
+                    <option value="3D metal">3D Metal</option>
+                    <option value="2D acrylic">2D Acrylic</option>
+                    <option value="LED backlit">LED Backlit</option>
+                    <option value="Vinyl">Vinyl</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Illumination:</label>
+                <select id="illuminationInput">
+                    <option value="">Select illumination</option>
+                    <option value="LED backlit">LED Backlit</option>
+                    <option value="Neon">Neon</option>
+                    <option value="None">No Illumination</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Installation Surface:</label>
+                <input type="text" id="installationInput" placeholder="e.g., Brick wall, Concrete" />
+            </div>
+            <div class="form-group">
+                <label>Location (City, State):</label>
+                <input type="text" id="locationInput" placeholder="e.g., New York, NY" />
+            </div>
+            <div class="form-group">
+                <label>Budget Range:</label>
+                <select id="budgetInput">
+                    <option value="">Select budget</option>
+                    <option value="$500-1000">$500-1000</option>
+                    <option value="$1000-2000">$1000-2000</option>
+                    <option value="$2000-5000">$2000-5000</option>
+                    <option value="$5000+">$5000+</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Deadline:</label>
+                <select id="deadlineInput">
+                    <option value="">Select deadline</option>
+                    <option value="Standard (15-17 business days)">Standard (15-17 business days)</option>
+                    <option value="Rush (12 business days)">Rush (12 business days)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Additional Notes:</label>
+                <textarea id="notesInput" rows="3" placeholder="Any additional requirements or notes..."></textarea>
+            </div>
+            <button onclick="submitQuote()">Submit Quote</button>
+            <button onclick="hideQuoteForm()">Cancel</button>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:5000/api/chatbot';
+        let sessionId = null;
+        let userEmail = null;
+
+        // DOM Elements
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const emailInput = document.getElementById('emailInput');
+        const fileInput = document.getElementById('fileInput');
+        const quoteForm = document.getElementById('quoteForm');
+        const sessionIdSpan = document.getElementById('sessionId');
+        const statusDiv = document.getElementById('status');
+
+        // Helper Functions
+        function showStatus(message, type = 'success') {
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            messageDiv.textContent = content;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showQuoteForm() {
+            quoteForm.style.display = 'block';
+        }
+
+        function hideQuoteForm() {
+            quoteForm.style.display = 'none';
+        }
+
+        // API Functions
+        async function makeApiCall(payload) {
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'API call failed');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                showStatus(error.message, 'error');
+                throw error;
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+
+            try {
+                const payload = {
+                    action: 'chat',
+                    message: message
+                };
+
+                if (sessionId) {
+                    payload.session_id = sessionId;
+                }
+
+                if (userEmail) {
+                    payload.email = userEmail;
+                }
+
+                const response = await makeApiCall(payload);
+                
+                // Store session ID
+                if (response.session_id) {
+                    sessionId = response.session_id;
+                    sessionIdSpan.textContent = sessionId;
+                }
+
+                // Add AI response
+                addMessage(response.response);
+
+                // Show quote form if triggered
+                if (response.quote_form_triggered) {
+                    setTimeout(() => {
+                        showQuoteForm();
+                    }, 1000);
+                }
+
+            } catch (error) {
+                addMessage('Sorry, I encountered an error. Please try again.');
+            }
+        }
+
+        async function setEmail() {
+            const email = emailInput.value.trim();
+            if (!email) return;
+
+            userEmail = email;
+            showStatus(`Email set to: ${email}`);
+            emailInput.value = '';
+        }
+
+        async function uploadFiles() {
+            const files = fileInput.files;
+            if (files.length === 0) {
+                showStatus('Please select files to upload', 'error');
+                return;
+            }
+
+            if (!sessionId) {
+                showStatus('Please start a conversation first', 'error');
+                return;
+            }
+
+            try {
+                const fileData = [];
+                
+                for (let file of files) {
+                    const base64 = await fileToBase64(file);
+                    fileData.push({
+                        filename: file.name,
+                        data: base64
+                    });
+                }
+
+                const payload = {
+                    action: 'upload',
+                    session_id: sessionId,
+                    files: fileData
+                };
+
+                const response = await makeApiCall(payload);
+                showStatus(`Uploaded ${response.uploaded_files.length} files successfully`);
+                fileInput.value = '';
+
+            } catch (error) {
+                showStatus('File upload failed', 'error');
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function submitQuote() {
+            if (!sessionId) {
+                showStatus('Please start a conversation first', 'error');
+                return;
+            }
+
+            const quoteData = {
+                size: document.getElementById('sizeInput').value,
+                material: document.getElementById('materialInput').value,
+                illumination: document.getElementById('illuminationInput').value,
+                installation: document.getElementById('installationInput').value,
+                location: document.getElementById('locationInput').value,
+                budget: document.getElementById('budgetInput').value,
+                deadline: document.getElementById('deadlineInput').value,
+                notes: document.getElementById('notesInput').value
+            };
+
+            try {
+                const payload = {
+                    action: 'quote',
+                    session_id: sessionId,
+                    quote_data: quoteData
+                };
+
+                const response = await makeApiCall(payload);
+                showStatus('Quote submitted successfully!');
+                hideQuoteForm();
+
+                // Clear form
+                Object.keys(quoteData).forEach(key => {
+                    const element = document.getElementById(key.replace(/([A-Z])/g, '_$1').toLowerCase() + 'Input');
+                    if (element) element.value = '';
+                });
+
+            } catch (error) {
+                showStatus('Quote submission failed', 'error');
+            }
+        }
+
+        // Event Listeners
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                setEmail();
+            }
+        });
+    </script>
+</body>
+</html>

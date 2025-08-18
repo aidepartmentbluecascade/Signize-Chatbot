@@ -68,17 +68,26 @@ except Exception as e:
 client = OpenAI(api_key=openai_key)
 
 # Dropbox configuration
-DROPBOX_ACCESS_TOKEN = "sl.u.AF4x65ThacbAYtb7n8P1sdFtphrXInO1hi7XXi4V713kPBOyu14h72A39pPQtbrBGhG_dASY_yHxhr9B5HOlxnAFdHUSZTTyaZ0qNL0vGDyGviNDNl-qViVSvrx1tDnrCBqo8AD2e9TCPOOdqCD6G8DI_CATAHXGAMF58HDgYeqzXTAma6A1GjruHg9vxuuuvBbsfzcJRLwssQaHBWA3Mq0sKnHdHg0xYgRaRRb5S8BFEoNWJrjYg2OvQkTjltyzW6u_TTPm4RlPDoto9s-Cnb_fLrekJVl6sNMVKlpxduXgkNYzoDqT95Cc-Bp4dMDTOQEoT8CPKOmvvKMro0gZmRGDMBfU8TtiF9ymD0DweusHl1tspx0BdQgE2q50UwwhCZfZ6rQ0q0cVMIH5vZ68POW1UCtqlEL2zo6ZHkwlg8XlceFf56RJqR47g2eAZoZoCHZjwjBBBTci9r5qVNLR0DmhqeFsDTE7OXM6Ab678oOQhrPTCCUC4uGQdA03CXGjMRxZTDGRcGbdo5FLLRhRrXcs0E1nhTGFLDXBRKrLoxz_R-kdpXXslspvh4d5y6fbgx7Fg1j9nZGW3Y38tP6tqS0BcNYlwdGCnT2Ho9dYCDsvocbQ9DoypFJqNqj1dzEbyRjHScYWDnpCh7o2x1v9M5cdCv51esVjTby0iRGxYPbTFZrxF9I18bkXsRdGIG9vxzZ9aD84V5-afnUYH_I20Cy7QWakqcLEswlQhCwdBTPFtW0M3fiH_BuqXmKYTaBHnpCwolxZ470pbqob8Uw2Cp1CoO2HG7Q0NE7CMfGczXhghZUDqG-V8hNmouxldnj6X9yotpZJw3XR2VcHkyg_7K1yMhN2LB5Dw8VgAO4XUkItcT-lIZst18Xbr_YjGtp8qz26vqFUMek5dmjSL5v8sNG38INn0aO1woqkdyrBKd4ZDHKZOwBRjVYx1uJTxh8EQAPUvXgnDKi0e8OE5oUTuLItk06I08S5fdXHV1Jexdy-vjzKxhh42a0a1rPY8KzRbHYim8MBfW0xsWcgSL-57dn0R16zGMJr703FFkWisoUMJUSq7dNOSQ20lS8B81Eb9A2ymXFbCEHKucP2LeHlQHCQhmsy9a5vaz9idJV3SJMGqo3P2JqzqvBFQzJ-RGSR7qJhS1sF3NOKS3vbwMu7K59YMqAj6d5R0vIlRGwtmkJ3a9pItU8G6HSJdHdtiyKHjRRc_MRwz0OPzQblMPS1TeBPmsZ2FoH3hp_Um-8bPVW0rMTpaNT-KOKxhBCC7_tX4jzMLT2mbkKHCFG6Xlm0UILZG4kUeWRO1Krtp9GW5feTLRC7Wjp_b1R_Z3DHATaEUDsmoJgB7cDGyJ4hducOqsSB2rfzJd4QmBrIATSOELFUPVColxpWVq5cxc9TTRYz7Z7-RooKJKS-zqGZMIQsL407"
+DROPBOX_ACCESS_TOKEN = "sl.u.AF4g2Y_oVz7LBHFpSQDRZhmJ1nD92c_BnELzDL1N2v1u7nisP-lD1aVMW7ftkcbWbKB2uyV_mwqmqjJnqz38dTUqtF2QwDNK2UzrzvmrgYObZF5ZGM1Wn1t7Ykhia-lvLDbByUzFjrzYGhBwZuehdmY5NxuU0KfC-PTo48_Dxnjv-BWXB_y9SzxYFC6LjDVqbzX7W4BowhDdVWQjcweRd_7NcDI_ji34EJMVi8dXNqsW91YKnPO2oBMdMd6Irfc71EgNbSTjqltI7UL8ILa2Qan9qjzA6vBJ6dd30Pn9_RvOxWCifw9V2G84KeIscHtWbZLu1-Y-PGg0qP8x-kZ_AR8tU0fAFZqnrISZgF45OS7U659GSKMH7k4iI4Ty3H2SgrlN8gNJforYa3QwFiyLBGFz8p3iMKjP78s9P0sqB8tJ0A19lNzojuZFrmmGCaB5mgy47QB04AoEEtszhmtZRLduhnFVRG9W1hujuS65HvTwu4j-Ffj1I0Rv16bQ1qB94i4CeEMmM83NKKaaJsO7_i5PyYFOuMQeFZYpmvbs296KUZaR9i4JNAfCy3xmybn4Di0KqLJiLeMB0vCPJF19vdjHdkUZELay1IuyzAjvbrfm6xicozXNADloRZhhcD05123Bt_E0S-eVeUtePdREjDygcsQccAyix5XOW5ppVgn62jujwthBCMWWEJG-TkBwfTTIB65Zoqo06X8SjbCXxe_kbtAxiKudopi97vbmfJHzXFZ4e6mrqhHJb4f9CcFSnOWVv_k1jf_XPhYIUmMvWwPYgxd3dgjvdnBze-BBTDjn6rnKnQglTK6FtH6xSKANZk9se4PcxF7shqVK-jaiRxOMEWGD2ZAGVfv58saKGUhX77LqQcaTwxgT4f5FXn_xN2OmPHyJGg7S6M7xBCi7bTPakV385gqmsBv73570-FeN8PkSC87Dgl7GFp3qrG2-Z6yYlVWa3fvveKS-yFTfb7gZTIholRG_227zRB54Kaw3xCrvJIOc9bLnH42UkObTp4DffnhGSdj70OgytTRn_ylbO6DKHIBwfKyIqfv-KRvmf8H2zsaZ4JxwUpmEyVrdDAcqOMH92l3SibAalpl_eKomvcdzmqqdD6zqm5Rs7YEY8IxkZ3POy7T2s4wvCaNU1ivgEpANFE73PYlpB-HgMAbvHZBTQ0Ng9VAre8PkKGn0StLX4YwGHt6u6CZLHGHL1cbKXhXHcvUNa9vIERHrAKrBQeEY0n4LORdkJ8WLxvYYK8w14iOWM32hOSbC8PbgSJXP2vTeDT9QgQIUm0DuucWGDG6PlyWc5aUy98W0AxmJ66uakpcJWR9oDkJYx4NJHKpi-rHg7pTuel3rsYT_o6KJPzU7FaYOrL4MHz34T7iaG9gmn2kG5xeYX_GG47_dckRJeDHvU6RWz17scbvE6LaK"
 
 def upload_to_dropbox(local_file_path, dropbox_path):
     """Upload file to Dropbox and return public link"""
     try:
+        print(f"🔍 Using Dropbox token: {DROPBOX_ACCESS_TOKEN[:20]}...")
         dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+        
+        # Test connection first
+        try:
+            account = dbx.users_get_current_account()
+            print(f"✅ Connected to Dropbox as: {account.name.display_name}")
+        except Exception as e:
+            print(f"❌ Dropbox connection test failed: {e}")
+            return None
         
         # Upload file
         with open(local_file_path, "rb") as f:
             dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
-        print(f"Uploaded {local_file_path} to {dropbox_path}")
+        print(f"✅ Uploaded {local_file_path} to {dropbox_path}")
 
         # Create a shared link
         try:
@@ -96,9 +105,14 @@ def upload_to_dropbox(local_file_path, dropbox_path):
 
         # Modify link to make it direct-download
         url = link_metadata.url.replace("?dl=0", "?dl=1")
+        print(f"✅ Created shared link: {url}")
         return url
+    except dropbox.exceptions.AuthError as e:
+        print(f"❌ Dropbox authentication error: {e}")
+        print(f"💡 Token used: {DROPBOX_ACCESS_TOKEN[:20]}...")
+        return None
     except Exception as e:
-        print(f"Dropbox upload error: {e}")
+        print(f"❌ Dropbox upload error: {e}")
         return None
 
 # Flask application setup

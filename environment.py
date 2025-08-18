@@ -6,15 +6,13 @@ def load_environment():
     openai_key = os.getenv("OPENAI_API_KEY")
     if not openai_key:
         raise ValueError("OpenAI API key is missing in the environment variables.")
-    
-    # MongoDB configuration - require Atlas URI for production
+
     mongodb_uri = os.getenv("MONGODB_URI")
     if not mongodb_uri:
         print("⚠️  MONGODB_URI not found in environment variables")
         print("   Please set MONGODB_URI=your_atlas_connection_string")
         raise ValueError("MONGODB_URI environment variable is required")
-    
-    # Set MongoDB URI in environment for other modules to use
+ 
     os.environ["MONGODB_URI"] = mongodb_uri
     print(f"✅ MongoDB URI loaded: {mongodb_uri[:50]}...")
     
@@ -40,8 +38,7 @@ def get_flask_config():
 def get_google_credentials():
     """Get Google credentials from environment variables or file"""
     load_dotenv()
-    
-    # Check if credentials are provided via environment variables
+
     if os.getenv("GOOGLE_CREDENTIALS_JSON"):
         try:
             import json
@@ -51,8 +48,7 @@ def get_google_credentials():
         except Exception as e:
             print(f"⚠️  Error parsing Google credentials from environment: {e}")
             return None
-    
-    # Fallback to credentials.json file
+
     if os.path.exists('credentials.json'):
         try:
             from google.oauth2.service_account import Credentials

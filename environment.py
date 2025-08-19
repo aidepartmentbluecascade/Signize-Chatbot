@@ -58,3 +58,22 @@ def get_google_credentials():
             return None
     
     return None
+
+def get_dropbox_config():
+    """Get Dropbox OAuth2 configuration from environment variables"""
+    load_dotenv()
+    
+    config = {
+        'app_key': os.getenv('DROPBOX_APP_KEY'),
+        'app_secret': os.getenv('DROPBOX_APP_SECRET'),
+        'refresh_token': os.getenv('DROPBOX_REFRESH_TOKEN'),
+        'access_token': os.getenv('DROPBOX_ACCESS_TOKEN')
+    }
+    
+    # Check if we have the minimum required credentials
+    if not config['app_key'] or not config['app_secret']:
+        print("⚠️  Dropbox OAuth2 credentials not found in environment variables")
+        print("   Please set DROPBOX_APP_KEY and DROPBOX_APP_SECRET")
+        return None
+    
+    return config

@@ -68,20 +68,15 @@ except Exception as e:
 client = OpenAI(api_key=openai_key)
 
 # Dropbox configuration
-DROPBOX_ACCESS_TOKEN = "sl.u.AF4g2Y_oVz7LBHFpSQDRZhmJ1nD92c_BnELzDL1N2v1u7nisP-lD1aVMW7ftkcbWbKB2uyV_mwqmqjJnqz38dTUqtF2QwDNK2UzrzvmrgYObZF5ZGM1Wn1t7Ykhia-lvLDbByUzFjrzYGhBwZuehdmY5NxuU0KfC-PTo48_Dxnjv-BWXB_y9SzxYFC6LjDVqbzX7W4BowhDdVWQjcweRd_7NcDI_ji34EJMVi8dXNqsW91YKnPO2oBMdMd6Irfc71EgNbSTjqltI7UL8ILa2Qan9qjzA6vBJ6dd30Pn9_RvOxWCifw9V2G84KeIscHtWbZLu1-Y-PGg0qP8x-kZ_AR8tU0fAFZqnrISZgF45OS7U659GSKMH7k4iI4Ty3H2SgrlN8gNJforYa3QwFiyLBGFz8p3iMKjP78s9P0sqB8tJ0A19lNzojuZFrmmGCaB5mgy47QB04AoEEtszhmtZRLduhnFVRG9W1hujuS65HvTwu4j-Ffj1I0Rv16bQ1qB94i4CeEMmM83NKKaaJsO7_i5PyYFOuMQeFZYpmvbs296KUZaR9i4JNAfCy3xmybn4Di0KqLJiLeMB0vCPJF19vdjHdkUZELay1IuyzAjvbrfm6xicozXNADloRZhhcD05123Bt_E0S-eVeUtePdREjDygcsQccAyix5XOW5ppVgn62jujwthBCMWWEJG-TkBwfTTIB65Zoqo06X8SjbCXxe_kbtAxiKudopi97vbmfJHzXFZ4e6mrqhHJb4f9CcFSnOWVv_k1jf_XPhYIUmMvWwPYgxd3dgjvdnBze-BBTDjn6rnKnQglTK6FtH6xSKANZk9se4PcxF7shqVK-jaiRxOMEWGD2ZAGVfv58saKGUhX77LqQcaTwxgT4f5FXn_xN2OmPHyJGg7S6M7xBCi7bTPakV385gqmsBv73570-FeN8PkSC87Dgl7GFp3qrG2-Z6yYlVWa3fvveKS-yFTfb7gZTIholRG_227zRB54Kaw3xCrvJIOc9bLnH42UkObTp4DffnhGSdj70OgytTRn_ylbO6DKHIBwfKyIqfv-KRvmf8H2zsaZ4JxwUpmEyVrdDAcqOMH92l3SibAalpl_eKomvcdzmqqdD6zqm5Rs7YEY8IxkZ3POy7T2s4wvCaNU1ivgEpANFE73PYlpB-HgMAbvHZBTQ0Ng9VAre8PkKGn0StLX4YwGHt6u6CZLHGHL1cbKXhXHcvUNa9vIERHrAKrBQeEY0n4LORdkJ8WLxvYYK8w14iOWM32hOSbC8PbgSJXP2vTeDT9QgQIUm0DuucWGDG6PlyWc5aUy98W0AxmJ66uakpcJWR9oDkJYx4NJHKpi-rHg7pTuel3rsYT_o6KJPzU7FaYOrL4MHz34T7iaG9gmn2kG5xeYX_GG47_dckRJeDHvU6RWz17scbvE6LaK"
+from dropbox_auth import create_dropbox_client
 
 def upload_to_dropbox(local_file_path, dropbox_path):
     """Upload file to Dropbox and return public link"""
     try:
-        print(f"🔍 Using Dropbox token: {DROPBOX_ACCESS_TOKEN[:20]}...")
-        dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
-        
-        # Test connection first
-        try:
-            account = dbx.users_get_current_account()
-            print(f"✅ Connected to Dropbox as: {account.name.display_name}")
-        except Exception as e:
-            print(f"❌ Dropbox connection test failed: {e}")
+        # Create Dropbox client with proper authentication
+        dbx = create_dropbox_client()
+        if not dbx:
+            print("❌ Failed to create Dropbox client")
             return None
         
         # Upload file
@@ -109,7 +104,6 @@ def upload_to_dropbox(local_file_path, dropbox_path):
         return url
     except dropbox.exceptions.AuthError as e:
         print(f"❌ Dropbox authentication error: {e}")
-        print(f"💡 Token used: {DROPBOX_ACCESS_TOKEN[:20]}...")
         return None
     except Exception as e:
         print(f"❌ Dropbox upload error: {e}")

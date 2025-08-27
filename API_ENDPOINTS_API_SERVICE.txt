@@ -1,0 +1,178 @@
+ChromaBot API Service (API-only) — v1
+
+Overview
+- Purpose: Expose the chatbot, quotes, and logo upload as a stateless HTTP API (no HTML templates, no static hosting)
+- Versioning: All routes are under /api/v1
+- Auth: API key required on all routes via header X-API-Key: <your_api_key>
+- CORS: Enable for your frontend origin(s)
+- State: Persist sessions/quotes/logos metadata in MongoDB; do not rely on in-memory state
+- Files: Logos uploaded directly to Dropbox (no local disk)
+
+Base URLs
+- Development: http://localhost:5000
+- Production: https://<your-app-on-render>
+- Base API path: {BASE_URL}/api/v1
+
+Authentication
+- Header: X-API-Key: <your_api_key>
+- Response on missing/invalid key: 401 Unauthorized
+- Example: curl -H "X-API-Key: sk_live_abc123" ...
+
+Error Format (recommended)
+- Content-Type: application/json
+- Shape: { "error": { "code": "string", "message": "string" } }
+- Example: { "error": { "code": "INVALID_INPUT", "message": "email is required" } }
+
+Content Types
+- JSON requests: application/json
+- File uploads: multipart/form-data
+- JSON responses: application/json
+
+Health
+1) GET /api/v1/health
+- Auth: optional (can be open) 
+- Request: none
+- Response: { "status": "ok" }
+- Status: 200
+- When: Liveness/readiness checks
+
+Chat
+2) POST /api/v1/chat
+- Headers: X-API-Key
+- Request (application/json):
+  {
+    "session_id": "string (required)",
+    "message": "string (required)",
+    "email": "string (optional)"
+  }
+- Response (application/json):
+  {
+    "message": "assistant response string",
+    "session_id": "string",
+    "message_count": number,
+    "quote_form_triggered": boolean
+  }
+- Status: 200; 400 (bad input); 500 (server)
+- When: Each time a user sends a message
+- Notes: Persist conversation to MongoDB keyed by session_id. If email provided, persist it for the session.
+
+Email Validation
+3) POST /api/v1/validate-email
+- Headers: X-API-Key
+- Request (application/json): { "email": "string (required)" }
+- Response (application/json): { "valid": boolean, "message": "string" }
+- Status: 200; 400 on missing input
+- When: Client-side validation before allowing quote submission
+
+Quotes
+4) POST /api/v1/quotes (create or update by session)
+- Headers: X-API-Key
+- Request (application/json):
+  {
+    "session_id": "string (required)",
+    "email": "string (required)",
+    "form_data": { "...": "..." } (required)
+  }
+- Response (application/json):
+  {
+    "success": true,
+    "message": "Quote data saved successfully",
+    "quote_id": "string (optional)"
+  }
+- Status: 200; 400; 500
+- When: On quote/mockup form submission (initial or updates)
+
+5) GET /api/v1/quotes/{session_id}
+- Headers: X-API-Key
+- Request: none
+- Response (application/json): { "form_data": { ... } }
+- Status: 200; 404 if not found (or 200 with {"form_data":{}} if you prefer) ; 500
+- When: Prefill form for an existing session
+
+Logos (Dropbox)
+6) POST /api/v1/logos (upload)
+- Headers: X-API-Key
+- Request (multipart/form-data):
+  - logo: file (required) [png, jpg, jpeg, gif, bmp, svg, pdf]
+  - session_id: string (required)
+- Response (application/json):
+  {
+    "success": true,
+    "message": "Logo uploaded successfully: <filename>",
+    "dropbox_url": "https://...dl=1",
+    "logo_count": number
+  }
+- Status: 200; 400; 500
+- When: User selects/uploads a logo; file sent directly to Dropbox from memory
+
+7) GET /api/v1/logos/{session_id}
+- Headers: X-API-Key
+- Request: none
+- Response (application/json): { "logos": [ { "filename": "string", "dropbox_url": "string", "upload_time": "ISO8601" } ] }
+- Status: 200; 500
+- When: Display any logos previously uploaded for a session
+
+Suggested Additional Endpoints (optional)
+8) GET /api/v1/sessions/{session_id}
+- Purpose: Retrieve full chat history (messages array) if you choose to persist it in MongoDB
+- Response: { "messages": [ {"role":"user|assistant","content":"..."} ] }
+
+9) DELETE /api/v1/sessions/{session_id}
+- Purpose: Remove a session and its stored messages/logos metadata
+
+10) GET /api/v1/version
+- Purpose: Return API version and build info
+
+Example Flows (When endpoints will hit)
+A) Chat flow
+- Client validates email (optional): POST /api/v1/validate-email
+- User sends message: POST /api/v1/chat
+- Assistant returns message; if quote_form_triggered=true, frontend opens the quote form
+
+B) Quote submission flow
+- User fills the form
+- Client sends: POST /api/v1/quotes
+- Later, to prefill: GET /api/v1/quotes/{session_id}
+
+C) Logo upload flow
+- Client selects logo file
+- Client uploads: POST /api/v1/logos (multipart with logo + session_id)
+- To list all: GET /api/v1/logos/{session_id}
+
+Curl Examples
+- Chat
+  curl -X POST "${BASE}/api/v1/chat" \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: $API_KEY" \
+    -d '{"session_id":"s1","message":"I want a mockup and quote","email":"me@ex.com"}'
+
+- Validate email
+  curl -X POST "${BASE}/api/v1/validate-email" \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: $API_KEY" \
+    -d '{"email":"me@ex.com"}'
+
+- Save quote
+  curl -X POST "${BASE}/api/v1/quotes" \
+    -H "Content-Type: application/json" \
+    -H "X-API-Key: $API_KEY" \
+    -d '{"session_id":"s1","email":"me@ex.com","form_data":{"size":"48x24"}}'
+
+- Get quote
+  curl -X GET "${BASE}/api/v1/quotes/s1" -H "X-API-Key: $API_KEY"
+
+- Upload logo
+  curl -X POST "${BASE}/api/v1/logos" \
+    -H "X-API-Key: $API_KEY" \
+    -F session_id=s1 \
+    -F logo=@./brand.png
+
+- List logos
+  curl -X GET "${BASE}/api/v1/logos/s1" -H "X-API-Key: $API_KEY"
+
+Implementation Notes
+- Create a Flask Blueprint: api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
+- Add API key decorator that checks request.headers['X-API-Key'] vs env API_KEY
+- Replace in-memory session storage with MongoDB collections: sessions, quotes, logos
+- Keep Dropbox auth refresh via dropbox_auth.py
+- Remove template/static endpoints from the API service

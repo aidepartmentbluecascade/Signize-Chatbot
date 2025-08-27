@@ -911,9 +911,13 @@ function addMessage(sender, content) {
     
     const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
+    const avatarContent = sender === 'ai' 
+        ? `<img src="https://45733428.fs1.hubspotusercontent-na2.net/hub/45733428/hubfs/unnamed%20(2)%20(1).png?width=108&height=108" alt="AI Assistant" class="robot-avatar">`
+        : `<i class="fas fa-user"></i>`;
+    
     messageDiv.innerHTML = `
         <div class="message-avatar">
-            <i class="fas fa-${sender === 'ai' ? 'robot' : 'user'}"></i>
+            ${avatarContent}
         </div>
         <div class="message-content">
             <div class="message-bubble">
@@ -949,7 +953,7 @@ function addTypingIndicator() {
     
     typingDiv.innerHTML = `
         <div class="message-avatar">
-            <i class="fas fa-robot"></i>
+            <img src="https://45733428.fs1.hubspotusercontent-na2.net/hub/45733428/hubfs/unnamed%20(2)%20(1).png?width=108&height=108" alt="AI Assistant" class="robot-avatar">
         </div>
         <div class="message-content">
             <div class="message-bubble">

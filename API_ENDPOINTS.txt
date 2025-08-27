@@ -1,0 +1,209 @@
+ChromaBot API Endpoints (current implementation)
+
+Base URLs
+- Local development: http://localhost:5000
+- Production (Render): https://<your-app-on-render>
+
+Authentication
+- None (no API key or auth middleware enabled at present)
+
+Content Types
+- JSON requests: application/json
+- File uploads: multipart/form-data
+- JSON responses: application/json
+
+------------------------------------------------------------
+1) Root - Serve Web UI (non-API)
+- Method & Path: GET /
+- Request: none
+- Response: HTML (renders templates/index.html)
+- When it’s called: Browser loads the chatbot web UI
+
+Example
+GET /
+
+------------------------------------------------------------
+2) Chat - Send a message and get AI response
+- Method & Path: POST /chat
+- Request Content-Type: application/json
+- Request JSON fields:
+  - session_id (string, required; any unique id chosen by client)
+  - message (string, required)
+  - email (string, optional; if provided, it is stored and used for sheets saving)
+- Response Content-Type: application/json
+- Response JSON fields:
+  - message (string): assistant response text
+  - session_id (string)
+  - message_count (number): total messages in the session stored server-side
+  - quote_form_triggered (boolean): whether the assistant instructed to open the quote form
+- Status codes: 200 on success; 500 on error
+- When it’s called: On every user message submission from the frontend
+
+Example Request
+POST /chat
+Content-Type: application/json
+{
+  "session_id": "session_123",
+  "message": "I want a mockup and quote for a custom sign.",
+  "email": "user@example.com"
+}
+
+Example Response
+200 OK
+{
+  "message": "I'd be happy to help you get a quote and create a mockup! ...",
+  "session_id": "session_123",
+  "message_count": 5,
+  "quote_form_triggered": true
+}
+
+------------------------------------------------------------
+3) Validate Email Format
+- Method & Path: POST /validate-email
+- Request Content-Type: application/json
+- Request JSON fields:
+  - email (string, required)
+- Response Content-Type: application/json
+- Response JSON fields:
+  - valid (boolean)
+  - message (string)
+- Status codes: 200 on success; 400 if email missing
+- When it’s called: Frontend email validation before proceeding
+
+Example Request
+POST /validate-email
+Content-Type: application/json
+{
+  "email": "user@example.com"
+}
+
+Example Response
+200 OK
+{
+  "valid": true,
+  "message": "Valid email format"
+}
+
+------------------------------------------------------------
+4) Save Quote (create or update)
+- Method & Path: POST /save-quote
+- Request Content-Type: application/json
+- Request JSON fields:
+  - session_id (string, required)
+  - email (string, required)
+  - form_data (object, required): arbitrary key/value pairs from the quote form
+- Response Content-Type: application/json
+- Response JSON fields (on success):
+  - success (boolean)
+  - message (string)
+  - quote_id (string, optional; when available from DB layer)
+- Status codes: 200 on success; 400 on missing fields; 500 on server error
+- When it’s called: When user submits the quote/mockup form; also updates Google Sheets if configured
+
+Example Request
+POST /save-quote
+Content-Type: application/json
+{
+  "session_id": "session_123",
+  "email": "user@example.com",
+  "form_data": {
+    "size": "48x24 in",
+    "material": "acrylic",
+    "illumination": "backlit",
+    "city_state": "Austin, TX",
+    "budget": "$1500-$2500"
+  }
+}
+
+Example Response
+200 OK
+{
+  "success": true,
+  "message": "Quote data saved successfully",
+  "quote_id": "66ce9f..."
+}
+
+------------------------------------------------------------
+5) Get Quote (by session)
+- Method & Path: GET /get-quote/<session_id>
+- Request: none
+- Response Content-Type: application/json
+- Response JSON fields:
+  - form_data (object): previously saved form data or {} if none
+- Status codes: 200 on success; 500 on server error
+- When it’s called: To prefill the quote form if a session already has saved data
+
+Example
+GET /get-quote/session_123
+
+Example Response
+200 OK
+{
+  "form_data": {
+    "size": "48x24 in",
+    "material": "acrylic"
+  }
+}
+
+------------------------------------------------------------
+6) Upload Logo (Dropbox, no local storage)
+- Method & Path: POST /upload-logo
+- Request Content-Type: multipart/form-data
+- Request form-data fields:
+  - logo (file, required): image/PDF of the logo
+  - session_id (string, required)
+- Response Content-Type: application/json
+- Response JSON fields (on success):
+  - success (boolean)
+  - message (string)
+  - dropbox_url (string): direct download link to the uploaded file
+  - logo_count (number): how many logos have been uploaded in this session (server-side memory)
+- Status codes: 200 on success; 400 on validation errors; 500 on Dropbox/upload errors
+- When it’s called: When the user uploads a logo file; files are sent directly to Dropbox from memory
+
+Example (multipart)
+POST /upload-logo
+Form-Data:
+  - logo: <file>
+  - session_id: session_123
+
+Example Response
+200 OK
+{
+  "success": true,
+  "message": "Logo uploaded successfully: logo_1755580761_brand.png",
+  "dropbox_url": "https://www.dropbox.com/s/....?dl=1",
+  "logo_count": 2
+}
+
+Allowed file types: png, jpg, jpeg, gif, bmp, svg, pdf
+
+------------------------------------------------------------
+7) List Logos for a Session
+- Method & Path: GET /session/<session_id>/logos
+- Request: none
+- Response Content-Type: application/json
+- Response JSON fields:
+  - logos (array of objects): [{ filename, dropbox_url, upload_time }]
+- Status codes: 200 on success; 500 on server error
+- When it’s called: To render any previously uploaded logos for the current session
+
+Example
+GET /session/session_123/logos
+
+Example Response
+200 OK
+{
+  "logos": [
+    {
+      "filename": "logo_1755580761_brand.png",
+      "dropbox_url": "https://www.dropbox.com/s/....?dl=1",
+      "upload_time": "2025-08-19T11:22:33.456789"
+    }
+  ]
+}
+
+Notes
+- Sessions are tracked in memory for logos and messages. Quotes are persisted in MongoDB via mongodb_operations.
+- Google Sheets logging is attempted if credentials are configured; otherwise skipped.
+- Dropbox authentication uses refresh tokens when available; access tokens auto-refresh before expiry.

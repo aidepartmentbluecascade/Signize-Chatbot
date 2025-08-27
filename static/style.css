@@ -152,7 +152,6 @@ body {
     background: var(--bg-primary);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-xl);
-    overflow: hidden;
     border: 1px solid var(--border-color);
 }
 
@@ -161,6 +160,7 @@ body {
     background: var(--gradient-primary);
     padding: 20px 24px;
     color: white;
+    border-radius: 10px 10px 0 0;
 }
 
 .chat-header-content {
@@ -408,6 +408,7 @@ body {
 .message-bubble p {
     margin: 0;
     line-height: 1.5;
+    font-size: 12px;
 }
 
 .message-time {
@@ -615,6 +616,8 @@ body {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    margin-top: 8px;
+    justify-content: flex-start;
 }
 
 .quick-action-btn {
@@ -627,7 +630,7 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
 }
@@ -718,6 +721,10 @@ body {
         width: 50px;
         height: 50px;
         font-size: 20px;
+    }
+    .send-btn {
+        width: 50px;
+        height: 39px;
     }
 }
 
@@ -1321,6 +1328,98 @@ body {
     margin-top: 24px;
 }
 
+/* Checkbox Styles */
+.checkbox-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 16px; /* match .unit-btn */
+    border-radius: 6px; /* match .unit-btn */
+    transition: all 0.2s ease;
+    position: relative;
+    border: 2px solid var(--border-color); /* match .unit-btn */
+    background: white; /* match .unit-btn */
+    color: var(--text-secondary); /* match .unit-btn */
+    font-size: 0.85rem; /* match .unit-btn */
+    font-weight: 500; /* match .unit-btn */
+    text-transform: none;
+    user-select: none;
+}
+
+.checkbox-item:hover {
+    border-color: var(--primary-color); /* match .unit-btn:hover */
+    color: var(--primary-color); /* match .unit-btn:hover */
+    background: var(--bg-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.checkbox-item input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark { display: none; }
+
+.checkbox-item input[type="checkbox"]:checked + .checkmark { display: none; }
+
+.checkbox-item input[type="checkbox"]:checked + .checkmark::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-item input[type="checkbox"]:checked ~ span {
+    color: white;
+    font-weight: 600;
+}
+
+.checkbox-item:has(input[type="checkbox"]:checked) {
+    background: var(--primary-color); /* match .unit-btn.active */
+    color: white; /* match .unit-btn.active */
+    border-color: var(--primary-color); /* match .unit-btn.active */
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); /* match .unit-btn.active */
+}
+
+.checkbox-item:has(input[type="checkbox"]:checked):hover {
+    background: var(--secondary-color); /* match .unit-btn.active:hover */
+    border-color: var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(118, 75, 162, 0.4);
+}
+
+/* Price Input Styles */
+.price-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.price-symbol {
+    position: absolute;
+    left: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    z-index: 1;
+}
+
+.price-input-wrapper input {
+    padding-left: 28px;
+}
+
 /* Responsive Design for Modals */
 @media (max-width: 768px) {
     .modal-content {
@@ -1341,5 +1440,13 @@ body {
     .btn-primary,
     .btn-secondary {
         width: 100%;
+    }
+    
+    .checkbox-group {
+        gap: 6px;
+    }
+    
+    .checkbox-item {
+        padding: 6px 10px;
     }
 }

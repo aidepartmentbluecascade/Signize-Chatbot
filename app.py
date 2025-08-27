@@ -460,6 +460,20 @@ def chat():
         else:
             print(f"⚠️  No email available for session {session_id}, skipping Google Sheets update")
         
+        # Save chat session to database
+        try:
+            db_result = mongodb_manager.save_chat_session(
+                session_id, 
+                chat_sessions[session_id].get("email", ""), 
+                chat_sessions[session_id]["messages"]
+            )
+            if db_result["success"]:
+                print(f"✅ Chat session saved to database: {db_result['action']}")
+            else:
+                print(f"⚠️  Failed to save chat session to database: {db_result.get('error', 'Unknown error')}")
+        except Exception as db_error:
+            print(f"❌ Database save error: {db_error}")
+        
         print(f"Generated response for session {session_id}:", response)
         return jsonify({
             "message": response,
@@ -736,6 +750,63 @@ def upload_logo():
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "message": f"Upload failed: {str(e)}"}), 500
+
+# Route to get session messages
+@app.route("/session/<session_id>/messages", methods=["GET"])
+def get_session_messages(session_id):
+    print(f">>> Get session messages endpoint hit for session {session_id}")
+    
+    try:
+        # First try to get from database
+        result = mongodb_manager.get_chat_session(session_id)
+        
+        if result["success"]:
+            session_data = result["session"]
+            messages = session_data.get("messages", [])
+            email = session_data.get("email", "")
+            
+            # Also update in-memory session for consistency
+            if session_id not in chat_sessions:
+                chat_sessions[session_id] = {
+                    "messages": messages,
+                    "email": email,
+                    "context_history": [],
+                    "conversation_state": "initial",
+                    "customer_info": {}
+                }
+            else:
+                chat_sessions[session_id]["messages"] = messages
+                chat_sessions[session_id]["email"] = email
+            
+            return jsonify({
+                "success": True,
+                "messages": messages,
+                "email": email,
+                "message_count": len(messages)
+            })
+        else:
+            # Fallback to in-memory session
+            if session_id in chat_sessions and "messages" in chat_sessions[session_id]:
+                messages = chat_sessions[session_id]["messages"]
+                email = chat_sessions[session_id].get("email", "")
+                return jsonify({
+                    "success": True,
+                    "messages": messages,
+                    "email": email,
+                    "message_count": len(messages)
+                })
+            else:
+                # No session found
+                return jsonify({
+                    "success": False,
+                    "messages": [],
+                    "email": "",
+                    "message_count": 0,
+                    "message": "Session not found"
+                })
+    except Exception as e:
+        print(f"❌ Error getting session messages: {str(e)}")
+        return jsonify({"error": f"Failed to get session messages: {str(e)}"}), 500
 
 # Route to get logos for a session
 @app.route("/session/<session_id>/logos", methods=["GET"])

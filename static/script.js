@@ -28,37 +28,50 @@ const requestChanges = document.getElementById('requestChanges');
 const closeSummary = document.getElementById('closeSummary');
 const quoteSummaryContent = document.getElementById('quoteSummaryContent');
 
-// Session Management
 let sessionId = generateSessionId();
 let isTyping = false;
 let userEmail = '';
 let emailCollected = false;
 
-// Initialize the application
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Hide chat container by default
+    const chatContainer = document.querySelector('.chat-container');
+    if (chatContainer) {
+        chatContainer.classList.add('hidden');
+    }
+    
+    // Show FAB button by default
+    if (fabBtn) {
+        fabBtn.style.display = 'flex';
+    }
+    
     initializeEventListeners();
     focusInput();
+    loadChatHistory(); // Load chat history for existing session
 });
 
-// Generate unique session ID
+
 function generateSessionId() {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    let genSessionId = localStorage.getItem('sessionId');
+    if (!genSessionId) {
+        genSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('sessionId', genSessionId);
+    }
+    return genSessionId;
 }
 
-// Initialize event listeners
 function initializeEventListeners() {
-    // Send message on button click
+ 
     sendBtn.addEventListener('click', sendMessage);
-    
-    // Send message on Enter key
+   
     messageInput.addEventListener('keypress', function(event) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             sendMessage();
         }
     });
-    
-    // Email validation and submission
+
     emailSubmitBtn.addEventListener('click', validateAndSubmitEmail);
     emailInput.addEventListener('keypress', function(event) {
         if (event.key === 'Enter') {
@@ -67,19 +80,18 @@ function initializeEventListeners() {
         }
     });
     
-    // Logo upload functionality
     if (logoUploadArea && logoFileInput) {
         logoUploadArea.addEventListener('click', () => logoFileInput.click());
         
         logoFileInput.addEventListener('change', handleLogoFileSelect);
         
-        // Drag and drop functionality
+   
         logoUploadArea.addEventListener('dragover', handleDragOver);
         logoUploadArea.addEventListener('dragleave', handleDragLeave);
         logoUploadArea.addEventListener('drop', handleDrop);
     }
     
-    // Input focus and typing indicators
+   
     messageInput.addEventListener('focus', function() {
         this.parentElement.classList.add('focused');
     });
@@ -87,8 +99,7 @@ function initializeEventListeners() {
     messageInput.addEventListener('blur', function() {
         this.parentElement.classList.remove('focused');
     });
-    
-    // Quick action buttons
+
     quickActionBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
@@ -96,31 +107,33 @@ function initializeEventListeners() {
         });
     });
     
-    // Control buttons
+   
     minimizeBtn.addEventListener('click', minimizeChat);
     closeBtn.addEventListener('click', closeChat);
     fabBtn.addEventListener('click', toggleChat);
     
-    // Quote form event listeners
     closeQuoteModal.addEventListener('click', closeQuoteForm);
     closeQuoteSummaryModal.addEventListener('click', closeQuoteSummary);
     cancelQuote.addEventListener('click', closeQuoteForm);
     requestChanges.addEventListener('click', requestQuoteChanges);
     closeSummary.addEventListener('click', closeQuoteSummary);
-    quoteForm.addEventListener('submit', handleQuoteSubmit);
+    // Quote form submission - use button click instead of form submit
+    const submitQuoteBtn = document.getElementById('submitQuoteBtn');
+    if (submitQuoteBtn) {
+        submitQuoteBtn.addEventListener('click', handleQuoteSubmit);
+    }
     
-    // Start fresh button
+
     const startFreshBtn = document.getElementById('startFreshBtn');
     if (startFreshBtn) {
         startFreshBtn.addEventListener('click', startFreshQuote);
     }
     
-    // Close modals when clicking overlay
+    
     quoteModal.addEventListener('click', function(e) {
         if (e.target === quoteModal) closeQuoteForm();
     });
     
-    // ESC key to close quote form
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             if (quoteModal.classList.contains('show')) {
@@ -132,7 +145,6 @@ function initializeEventListeners() {
         }
     });
     
-    // Unit button functionality for dimensions
     const unitButtons = document.querySelectorAll('.unit-btn');
     unitButtons.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -141,14 +153,12 @@ function initializeEventListeners() {
             
             console.log(`Unit button clicked: ${field} - ${unit}`);
             
-            // Remove active class from all buttons in this field group
+       
             const fieldGroup = this.closest('.input-with-unit');
             fieldGroup.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-            
-            // Add active class to clicked button
+        
             this.classList.add('active');
-            
-            // Update the corresponding input field with unit info
+           
             const input = fieldGroup.querySelector('input');
             if (input) {
                 input.dataset.unit = unit;
@@ -161,11 +171,11 @@ function initializeEventListeners() {
         if (e.target === quoteSummaryModal) closeQuoteSummary();
     });
     
-    // Auto-resize input
+    
     messageInput.addEventListener('input', autoResizeInput);
 }
 
-// Email validation and submission
+
 async function validateAndSubmitEmail() {
     const email = emailInput.value.trim();
     if (!email) {
@@ -190,7 +200,7 @@ async function validateAndSubmitEmail() {
             showEmailValidation('Email saved successfully!', true);
             hideEmailField();
             
-            // Send a message to the bot indicating email was collected
+            
             setTimeout(() => {
                 addMessage('user', `My email is ${email}`);
                 sendMessageToBot(`My email is ${email}`);
@@ -211,18 +221,18 @@ function showEmailValidation(message, isValid) {
 
 function hideEmailField() {
     emailFieldContainer.style.display = 'none';
-    // Enable chat input when email field is hidden
+   
     enableChatInput();
 }
 
 function showEmailField() {
     emailFieldContainer.style.display = 'block';
     emailInput.focus();
-    // Disable chat input when email field is shown
+  
     disableChatInput();
 }
 
-// Chat input control functions
+
 function disableChatInput() {
     messageInput.disabled = true;
     messageInput.placeholder = 'Please enter your email first...';
@@ -230,7 +240,6 @@ function disableChatInput() {
     messageInput.classList.add('disabled');
     sendBtn.classList.add('disabled');
     
-    // Also disable quick action buttons
     quickActionBtns.forEach(btn => {
         btn.disabled = true;
         btn.classList.add('disabled');
@@ -244,14 +253,14 @@ function enableChatInput() {
     messageInput.classList.remove('disabled');
     sendBtn.classList.remove('disabled');
     
-    // Also enable quick action buttons
+   
     quickActionBtns.forEach(btn => {
         btn.disabled = false;
         btn.classList.remove('disabled');
     });
 }
 
-// Logo Upload Functions
+
 let uploadedLogos = [];
 
 function handleLogoFileSelect(event) {
@@ -303,7 +312,7 @@ function isValidLogoFile(file) {
 async function uploadLogoFile(file) {
     const logoId = 'logo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
-    // Add preview item
+ 
     addLogoPreviewItem(logoId, file, 'uploading');
     
     try {
@@ -391,7 +400,7 @@ function removeLogo(logoId) {
     }
 }
 
-// Show uploaded logos
+
 async function showUploadedLogos() {
     try {
         const response = await fetch(`/session/${sessionId}/logos`);
@@ -412,23 +421,21 @@ async function showUploadedLogos() {
     }
 }
 
-// Send message function
 async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message || isTyping) return;
     
-    // Add user message to chat
+  
     addMessage('user', message);
     messageInput.value = '';
     autoResizeInput();
     
-    // Send message to bot
     await sendMessageToBot(message);
 }
 
-// Send message to bot
+
 async function sendMessageToBot(message) {
-    // Show typing indicator for AI response
+    
     addTypingIndicator();
     isTyping = true;
     
@@ -448,28 +455,21 @@ async function sendMessageToBot(message) {
         const data = await response.json();
         
         if (response.ok) {
-            // Add AI response to chat
+          
             addMessage('ai', data.message);
             
-            // Check if quote form should be triggered (only if email is collected)
+           
             if (data.quote_form_triggered && emailCollected) {
                 setTimeout(() => {
                     showQuoteForm();
                 }, 1000);
             }
-            
-            // Check if the bot is asking for email
+           
             if (data.message.toLowerCase().includes('email') && !emailCollected) {
                 showEmailField();
             }
-            
-            // REMOVED: Logo upload functionality - not needed
-            
-            // Check if the bot is asking about uploaded logos
-            // Note: showUploadedLogos function is commented out, so we'll skip this for now
-            // if (data.message.toLowerCase().includes('logo') && (data.message.toLowerCase().includes('uploaded') || data.message.toLowerCase().includes('have'))) {
-            //     showUploadedLogos();
-            // }
+          
+          
         } else {
             throw new Error(data.message || 'Failed to send message');
         }
@@ -482,12 +482,11 @@ async function sendMessageToBot(message) {
     }
 }
 
-// Quote Form Functions
+
 function debugFormFields() {
     console.log('🔍 Debugging form fields...');
     console.log('Form element:', quoteForm);
     
-    // List all form elements
     const formElements = quoteForm.elements;
     console.log('Available form elements:');
     for (let i = 0; i < formElements.length; i++) {
@@ -497,7 +496,6 @@ function debugFormFields() {
         }
     }
     
-    // Check specific fields we need
     const requiredFields = ['width', 'height', 'materialPreference', 'illumination', 'installationSurface', 'cityState', 'budget', 'placement', 'deadline', 'additionalNotes'];
     requiredFields.forEach(field => {
         const element = quoteForm.elements[field];
@@ -511,15 +509,13 @@ function debugFormFields() {
 
 function showQuoteForm() {
     quoteModal.classList.add('show');
-    
-    // Debug form fields first
+  
     debugFormFields();
     
-    // Check if we have a session ID before trying to load data
+   
     if (sessionId) {
         console.log('🔄 Session ID found, attempting to load existing data...');
-        // Always try to load existing data and restore unit buttons
-        // The loadExistingQuoteData function will handle unit button restoration
+     
         loadExistingQuoteData();
     } else {
         console.log('⚠️  No session ID found, using default form state');
@@ -530,12 +526,11 @@ function showQuoteForm() {
 function closeQuoteForm() {
     quoteModal.classList.remove('show');
     quoteForm.reset();
-    // Clear uploaded logos
+    
     uploadedLogos = [];
     logoPreviewList.innerHTML = '';
     logoPreviewContainer.style.display = 'none';
-    // Don't reset unit buttons - preserve user selections for next time
-    // resetUnitButtons();
+   
 }
 
 function closeQuoteSummary() {
@@ -543,14 +538,14 @@ function closeQuoteSummary() {
 }
 
 function resetUnitButtons() {
-    // Reset all unit buttons to inches (default)
+   
     const unitButtons = document.querySelectorAll('.unit-btn');
     unitButtons.forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.unit === 'inches') {
             btn.classList.add('active');
         }
-        // Reset dataset unit on inputs
+        
         const fieldGroup = btn.closest('.input-with-unit');
         const input = fieldGroup.querySelector('input');
         if (input) {
@@ -560,7 +555,7 @@ function resetUnitButtons() {
 }
 
 function clearStoredQuoteData() {
-    // Clear any stored data in memory (not localStorage)
+   
     console.log('Cleared stored quote data from memory');
 }
 
@@ -568,27 +563,25 @@ function startFreshQuote() {
     clearStoredQuoteData();
     resetUnitButtons();
     quoteForm.reset();
-    // Clear uploaded logos
+   
     uploadedLogos = [];
     logoPreviewList.innerHTML = '';
     logoPreviewContainer.style.display = 'none';
 }
 
-async function handleQuoteSubmit(event) {
-    event.preventDefault();
+async function handleQuoteSubmit() {
     
     if (!userEmail) {
         alert('Please provide your email address first.');
         return;
     }
     
-    // Validate dimensions if provided
+ 
     const widthInput = document.getElementById('width');
     const heightInput = document.getElementById('height');
     const width = widthInput.value.trim();
     const height = heightInput.value.trim();
     
-    // Only validate if both dimensions are provided
     if (width || height) {
         if (!width || !height) {
             alert('Please enter both width and height dimensions, or leave both empty.');
@@ -604,19 +597,17 @@ async function handleQuoteSubmit(event) {
     const formData = new FormData(quoteForm);
     const quoteData = {};
     
-    // Convert FormData to object
+ 
     for (let [key, value] of formData.entries()) {
         quoteData[key] = value;
     }
     
-    // Handle dimensions with units
     const widthUnit = widthInput.dataset.unit || 'inches';
     const heightUnit = heightInput.dataset.unit || 'inches';
     
-    console.log('📝 Form submission - Units:', { widthUnit, heightUnit });
-    console.log('📝 Form submission - Dimensions:', { width, height });
+   
     
-    // Create formatted dimensions string
+   
     if (width && height) {
         quoteData.sizeDimensions = `${width} ${widthUnit} × ${height} ${heightUnit}`;
         quoteData.width = width;
@@ -624,15 +615,12 @@ async function handleQuoteSubmit(event) {
         quoteData.widthUnit = widthUnit;
         quoteData.heightUnit = heightUnit;
         
-        console.log('📐 Formatted dimensions:', quoteData.sizeDimensions);
+     
     }
     
-    // Add logo information
     quoteData.uploadedLogos = uploadedLogos;
     quoteData.logoCount = uploadedLogos.length;
-    
-    console.log('📤 Submitting quote data:', quoteData);
-    
+  
     try {
         const response = await fetch('/save-quote', {
             method: 'POST',
@@ -650,7 +638,7 @@ async function handleQuoteSubmit(event) {
         console.log('📥 Save quote response:', data);
         
         if (data.success) {
-            console.log('✅ Quote saved successfully, closing form and showing summary');
+           
             closeQuoteForm();
             showQuoteSummary(quoteData);
             
@@ -1132,9 +1120,7 @@ const typingStyles = `
         }
     }
     
-    .fab {
-        display: none;
-    }
+
     
     .input-wrapper.focused {
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -1197,6 +1183,48 @@ function testUnitButtons() {
         width: widthInput?.dataset.unit || 'not set',
         height: heightInput?.dataset.unit || 'not set'
     });
+}
+
+// Load chat history for existing session
+async function loadChatHistory() {
+    try {
+        console.log('🔄 Loading chat history for session:', sessionId);
+        
+        const response = await fetch(`/session/${sessionId}/messages`);
+        const data = await response.json();
+        
+        if (data.success && data.messages && data.messages.length > 0) {
+            console.log('📚 Found existing chat history:', data.messages.length, 'messages');
+            
+            // Clear any existing messages
+            chatMessages.innerHTML = '';
+            
+            // Load each message
+            data.messages.forEach(message => {
+                if (message.role === 'user') {
+                    addMessage('user', message.content);
+                } else if (message.role === 'assistant') {
+                    addMessage('ai', message.content);
+                }
+            });
+            
+            // Set email if available
+            if (data.email) {
+                userEmail = data.email;
+                emailCollected = true;
+                console.log('📧 Email loaded from session:', userEmail);
+            }
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            console.log('✅ Chat history loaded successfully');
+        } else {
+            console.log('📝 No existing chat history found');
+        }
+    } catch (error) {
+        console.error('❌ Error loading chat history:', error);
+    }
 }
 
 function testLoadQuoteData() {

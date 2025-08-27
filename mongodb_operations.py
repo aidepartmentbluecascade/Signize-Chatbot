@@ -83,7 +83,8 @@ class MongoDBManager:
                     "form_data": form_data,
                     "created_at": datetime.now(),
                     "updated_at": datetime.now(),
-                    "status": "new"
+                    "status": "new",
+                    "type": "quote_data"
                 }
                 result = self.quotes_collection.insert_one(quote_doc)
                 if result.inserted_id:
@@ -249,6 +250,119 @@ class MongoDBManager:
             print(f"❌ Error reading all quotes locally: {e}")
             return {"success": False, "error": str(e)}
 
+    def save_chat_session(self, session_id, email, messages):
+        """Save chat session to MongoDB quotes collection or local file as fallback"""
+        if not self.connected:
+            return self._save_chat_session_locally(session_id, email, messages)
+        
+        try:
+            # Check if session already exists in quotes collection
+            existing_session = self.quotes_collection.find_one({"session_id": session_id})
+            
+            if existing_session:
+                # Update existing session with messages
+                result = self.quotes_collection.update_one(
+                    {"session_id": session_id},
+                    {
+                        "$set": {
+                            "email": email,
+                            "messages": messages,
+                            "updated_at": datetime.now(),
+                            "message_count": len(messages),
+                            "type": "chat_session"
+                        }
+                    }
+                )
+                if result.modified_count > 0:
+                    print(f"✅ Chat session updated in quotes collection for session {session_id}")
+                    return {"success": True, "action": "updated", "session_id": session_id}
+                else:
+                    print(f"⚠️  No changes made to chat session for session {session_id}")
+                    return {"success": False, "error": "No changes made"}
+            else:
+                # Create new session in quotes collection
+                session_doc = {
+                    "session_id": session_id,
+                    "email": email,
+                    "messages": messages,
+                    "created_at": datetime.now(),
+                    "updated_at": datetime.now(),
+                    "message_count": len(messages),
+                    "type": "chat_session"
+                }
+                result = self.quotes_collection.insert_one(session_doc)
+                if result.inserted_id:
+                    print(f"✅ Chat session saved in quotes collection for session {session_id}")
+                    return {"success": True, "action": "created", "session_id": session_id}
+                else:
+                    print(f"❌ Failed to save chat session for session {session_id}")
+                    return {"success": False, "error": "Failed to insert session"}
+                    
+        except Exception as e:
+            print(f"❌ Error saving chat session to MongoDB: {e}")
+            print("   Falling back to local storage")
+            return self._save_chat_session_locally(session_id, email, messages)
+
+    def get_chat_session(self, session_id):
+        """Get chat session from MongoDB quotes collection or local file as fallback"""
+        if not self.connected:
+            return self._get_chat_session_locally(session_id)
+        
+        try:
+            session_data = self.quotes_collection.find_one({"session_id": session_id})
+            if session_data:
+                # Convert ObjectId to string for JSON serialization
+                session_data["_id"] = str(session_data["_id"])
+                return {"success": True, "session": session_data}
+            else:
+                return {"success": False, "error": "Session not found"}
+                
+        except Exception as e:
+            print(f"❌ Error getting chat session from MongoDB: {e}")
+            print("   Falling back to local storage")
+            return self._get_chat_session_locally(session_id)
+
+    def _save_chat_session_locally(self, session_id, email, messages):
+        """Save chat session to local JSON file"""
+        try:
+            os.makedirs("chat_sessions", exist_ok=True)
+            
+            session_data = {
+                "session_id": session_id,
+                "email": email,
+                "messages": messages,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "message_count": len(messages)
+            }
+            
+            filename = f"chat_sessions/session_{session_id}.json"
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(session_data, f, indent=2, ensure_ascii=False, default=str)
+            
+            print(f"✅ Chat session saved locally to {filename}")
+            return {"success": True, "action": "created", "filename": filename}
+            
+        except Exception as e:
+            print(f"❌ Error saving chat session locally: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _get_chat_session_locally(self, session_id):
+        """Get chat session from local JSON file"""
+        try:
+            filename = f"chat_sessions/session_{session_id}.json"
+            if os.path.exists(filename):
+                with open(filename, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                return {"success": True, "session": session_data}
+            else:
+                return {"success": False, "error": "Session not found"}
+                
+        except Exception as e:
+            print(f"❌ Error reading chat session locally: {e}")
+            return {"success": False, "error": str(e)}
+
+
 def test_mongodb_connection():
     """Test MongoDB connection for debugging"""
     try:
@@ -261,6 +375,7 @@ def test_mongodb_connection():
     except Exception as e:
         print(f"MongoDB connection test failed: {e}")
         return False
+
 
 # Create global instance
 mongodb_manager = MongoDBManager()

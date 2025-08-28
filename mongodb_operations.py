@@ -250,28 +250,32 @@ class MongoDBManager:
             print(f"❌ Error reading all quotes locally: {e}")
             return {"success": False, "error": str(e)}
 
-    def save_chat_session(self, session_id, email, messages):
+    def save_chat_session(self, session_id, email, messages, phone_number=None):
         """Save chat session to MongoDB quotes collection or local file as fallback"""
         if not self.connected:
-            return self._save_chat_session_locally(session_id, email, messages)
+            return self._save_chat_session_locally(session_id, email, messages, phone_number)
         
         try:
             # Check if session already exists in quotes collection
             existing_session = self.quotes_collection.find_one({"session_id": session_id})
             
             if existing_session:
-                # Update existing session with messages
+                # Update existing session with messages and phone number
+                update_data = {
+                    "email": email,
+                    "messages": messages,
+                    "updated_at": datetime.now(),
+                    "message_count": len(messages),
+                    "type": "chat_session"
+                }
+                
+                # Only update phone number if provided
+                if phone_number:
+                    update_data["phone_number"] = phone_number
+                
                 result = self.quotes_collection.update_one(
                     {"session_id": session_id},
-                    {
-                        "$set": {
-                            "email": email,
-                            "messages": messages,
-                            "updated_at": datetime.now(),
-                            "message_count": len(messages),
-                            "type": "chat_session"
-                        }
-                    }
+                    {"$set": update_data}
                 )
                 if result.modified_count > 0:
                     print(f"✅ Chat session updated in quotes collection for session {session_id}")
@@ -290,6 +294,11 @@ class MongoDBManager:
                     "message_count": len(messages),
                     "type": "chat_session"
                 }
+                
+                # Add phone number if provided
+                if phone_number:
+                    session_doc["phone_number"] = phone_number
+                
                 result = self.quotes_collection.insert_one(session_doc)
                 if result.inserted_id:
                     print(f"✅ Chat session saved in quotes collection for session {session_id}")
@@ -301,7 +310,51 @@ class MongoDBManager:
         except Exception as e:
             print(f"❌ Error saving chat session to MongoDB: {e}")
             print("   Falling back to local storage")
-            return self._save_chat_session_locally(session_id, email, messages)
+            return self._save_chat_session_locally(session_id, email, messages, phone_number)
+
+    def update_phone_number(self, session_id, phone_number):
+        """Update phone number for a session"""
+        if not self.connected:
+            return self._update_phone_number_locally(session_id, phone_number)
+        
+        try:
+            result = self.quotes_collection.update_one(
+                {"session_id": session_id},
+                {
+                    "$set": {
+                        "phone_number": phone_number,
+                        "updated_at": datetime.now()
+                    }
+                }
+            )
+            if result.modified_count > 0:
+                print(f"✅ Phone number updated for session {session_id}")
+                return {"success": True, "message": "Phone number updated"}
+            else:
+                print(f"⚠️  No session found to update phone number for session {session_id}")
+                return {"success": False, "error": "Session not found"}
+                
+        except Exception as e:
+            print(f"❌ Error updating phone number in MongoDB: {e}")
+            print("   Falling back to local storage")
+            return self._update_phone_number_locally(session_id, phone_number)
+
+    def get_phone_number(self, session_id):
+        """Get phone number for a session"""
+        if not self.connected:
+            return self._get_phone_number_locally(session_id)
+        
+        try:
+            session_data = self.quotes_collection.find_one({"session_id": session_id})
+            if session_data and "phone_number" in session_data:
+                return {"success": True, "phone_number": session_data["phone_number"]}
+            else:
+                return {"success": False, "phone_number": None}
+                
+        except Exception as e:
+            print(f"❌ Error getting phone number from MongoDB: {e}")
+            print("   Falling back to local storage")
+            return self._get_phone_number_locally(session_id)
 
     def get_chat_session(self, session_id):
         """Get chat session from MongoDB quotes collection or local file as fallback"""
@@ -322,7 +375,7 @@ class MongoDBManager:
             print("   Falling back to local storage")
             return self._get_chat_session_locally(session_id)
 
-    def _save_chat_session_locally(self, session_id, email, messages):
+    def _save_chat_session_locally(self, session_id, email, messages, phone_number=None):
         """Save chat session to local JSON file"""
         try:
             os.makedirs("chat_sessions", exist_ok=True)
@@ -335,6 +388,10 @@ class MongoDBManager:
                 "updated_at": datetime.now().isoformat(),
                 "message_count": len(messages)
             }
+            
+            # Add phone number if provided
+            if phone_number:
+                session_data["phone_number"] = phone_number
             
             filename = f"chat_sessions/session_{session_id}.json"
             with open(filename, 'w', encoding='utf-8') as f:
@@ -360,6 +417,44 @@ class MongoDBManager:
                 
         except Exception as e:
             print(f"❌ Error reading chat session locally: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _update_phone_number_locally(self, session_id, phone_number):
+        """Update phone number in local JSON file"""
+        try:
+            filename = f"chat_sessions/session_{session_id}.json"
+            if os.path.exists(filename):
+                with open(filename, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                
+                session_data["phone_number"] = phone_number
+                session_data["updated_at"] = datetime.now().isoformat()
+                
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(session_data, f, indent=2, ensure_ascii=False, default=str)
+                
+                print(f"✅ Phone number updated locally for session {session_id}")
+                return {"success": True, "message": "Phone number updated"}
+            else:
+                return {"success": False, "error": "Session not found"}
+                
+        except Exception as e:
+            print(f"❌ Error updating phone number locally: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _get_phone_number_locally(self, session_id):
+        """Get phone number from local JSON file"""
+        try:
+            filename = f"chat_sessions/session_{session_id}.json"
+            if os.path.exists(filename):
+                with open(filename, 'r', encoding='utf-8') as f:
+                    session_data = json.load(f)
+                return {"success": True, "phone_number": session_data.get("phone_number")}
+            else:
+                return {"success": False, "phone_number": None}
+                
+        except Exception as e:
+            print(f"❌ Error reading phone number locally: {e}")
             return {"success": False, "error": str(e)}
 
 

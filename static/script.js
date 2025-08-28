@@ -11,6 +11,12 @@ const emailInput = document.getElementById('emailInput');
 const emailSubmitBtn = document.getElementById('emailSubmitBtn');
 const emailValidation = document.getElementById('emailValidation');
 
+// Phone Number Elements
+const phoneFieldContainer = document.getElementById('phoneFieldContainer');
+const phoneInput = document.getElementById('phoneInput');
+const phoneSubmitBtn = document.getElementById('phoneSubmitBtn');
+const phoneValidation = document.getElementById('phoneValidation');
+
 // Logo Upload Elements
 const logoUploadArea = document.getElementById('logoUploadArea');
 const logoFileInput = document.getElementById('logoFileInput');
@@ -32,6 +38,8 @@ let sessionId = generateSessionId();
 let isTyping = false;
 let userEmail = '';
 let emailCollected = false;
+let userPhone = '';
+let phoneCollected = false;
 
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -77,6 +85,15 @@ function initializeEventListeners() {
         if (event.key === 'Enter') {
             event.preventDefault();
             validateAndSubmitEmail();
+        }
+    });
+    
+    // Phone number event listeners
+    phoneSubmitBtn.addEventListener('click', validateAndSubmitPhone);
+    phoneInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            validateAndSubmitPhone();
         }
     });
     
@@ -214,9 +231,64 @@ async function validateAndSubmitEmail() {
     }
 }
 
+async function validateAndSubmitPhone() {
+    const phone = phoneInput.value.trim();
+    if (!phone) {
+        showPhoneValidation('Please enter a phone number', false);
+        return;
+    }
+    
+    // Basic phone number validation (allows various formats)
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+    
+    if (!phoneRegex.test(cleanPhone)) {
+        showPhoneValidation('Please enter a valid phone number', false);
+        return;
+    }
+    
+    try {
+        const response = await fetch('/save-phone', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                session_id: sessionId,
+                phone_number: cleanPhone 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            userPhone = cleanPhone;
+            phoneCollected = true;
+            showPhoneValidation('Phone number saved successfully!', true);
+            hidePhoneField();
+            
+            // Send a message to the bot confirming phone number
+            setTimeout(() => {
+                addMessage('user', `My phone number is ${cleanPhone}`);
+                sendMessageToBot(`My phone number is ${cleanPhone}`);
+            }, 1000);
+        } else {
+            showPhoneValidation('Failed to save phone number', false);
+        }
+    } catch (error) {
+        console.error('Phone validation error:', error);
+        showPhoneValidation('Phone validation failed', false);
+    }
+}
+
 function showEmailValidation(message, isValid) {
     emailValidation.textContent = message;
     emailValidation.className = `email-validation ${isValid ? 'valid' : 'invalid'}`;
+}
+
+function showPhoneValidation(message, isValid) {
+    phoneValidation.textContent = message;
+    phoneValidation.className = `phone-validation ${isValid ? 'valid' : 'invalid'}`;
 }
 
 function hideEmailField() {
@@ -229,6 +301,28 @@ function showEmailField() {
     emailFieldContainer.style.display = 'block';
     emailInput.focus();
   
+    disableChatInput();
+}
+
+function hidePhoneField() {
+    phoneFieldContainer.style.display = 'none';
+   
+    enableChatInput();
+}
+
+function showPhoneField() {
+    console.log('📱 showPhoneField() called');
+    console.log('📱 phoneFieldContainer:', phoneFieldContainer);
+    console.log('📱 phoneInput:', phoneInput);
+    
+    if (phoneFieldContainer && phoneInput) {
+        phoneFieldContainer.style.display = 'block';
+        phoneInput.focus();
+        console.log('✅ Phone field shown successfully');
+    } else {
+        console.error('❌ Phone field elements not found');
+    }
+    
     disableChatInput();
 }
 
@@ -467,6 +561,51 @@ async function sendMessageToBot(message) {
            
             if (data.message.toLowerCase().includes('email') && !emailCollected) {
                 showEmailField();
+            }
+            
+            // Check if AI is asking for phone number
+            if (data.message.toLowerCase().includes('phone') && !phoneCollected) {
+                console.log('📱 AI message contains "phone" - showing phone field');
+                showPhoneField();
+            }
+            
+            // Check if AI triggered phone number collection
+            if (data.phone_number_triggered && !phoneCollected) {
+                console.log('📱 AI triggered phone number collection - showing phone field');
+                setTimeout(() => {
+                    showPhoneField();
+                }, 1000);
+            }
+            
+            // Additional phone number triggers for better detection
+            const phoneTriggers = [
+                'call me', 'call you', 'speak to someone', 'talk to someone',
+                'human', 'representative', 'expert', 'agent', 'connect me',
+                'reach out', 'contact me', 'get in touch'
+            ];
+            
+            const messageLower = data.message.toLowerCase();
+            const hasPhoneTrigger = phoneTriggers.some(trigger => messageLower.includes(trigger));
+            
+            if (hasPhoneTrigger && !phoneCollected && !data.phone_number_triggered) {
+                console.log('📱 Message contains phone trigger phrase - showing phone field');
+                setTimeout(() => {
+                    showPhoneField();
+                }, 1000);
+            }
+            
+            // Log phone collection status for debugging
+            if (hasPhoneTrigger || data.message.toLowerCase().includes('phone')) {
+                console.log('📱 Phone-related message detected');
+                console.log('📱 Phone collected status:', phoneCollected);
+                console.log('📱 Current phone number:', userPhone);
+                console.log('📱 Phone number trigger:', data.phone_number_triggered);
+                
+                if (phoneCollected) {
+                    console.log('✅ Phone number already collected, no popup needed');
+                } else {
+                    console.log('⚠️  Phone number not collected, popup should appear');
+                }
             }
           
           
@@ -1215,6 +1354,17 @@ async function loadChatHistory() {
                 console.log('📧 Email loaded from session:', userEmail);
             }
             
+            // Set phone number if available
+            if (data.phone_number) {
+                userPhone = data.phone_number;
+                phoneCollected = true;
+                console.log('📱 Phone number loaded from session:', userPhone);
+                console.log('📱 Phone collection status set to:', phoneCollected);
+            } else {
+                console.log('📱 No phone number found in session');
+                phoneCollected = false;
+            }
+            
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
@@ -1334,3 +1484,30 @@ function testQuoteDataStorage() {
 window.testLoadQuoteData = testLoadQuoteData;
 window.testDatabaseConnection = testDatabaseConnection;
 window.testQuoteDataStorage = testQuoteDataStorage;
+
+// Function to check and update phone number status
+async function checkPhoneNumberStatus() {
+    try {
+        console.log('🔍 Checking phone number status from server...');
+        const response = await fetch(`/get-phone/${sessionId}`);
+        const data = await response.json();
+        
+        if (data.phone_number) {
+            userPhone = data.phone_number;
+            phoneCollected = true;
+            console.log('📱 Phone number status updated:', userPhone);
+            console.log('📱 Phone collected flag set to:', phoneCollected);
+        } else {
+            phoneCollected = false;
+            console.log('📱 No phone number found on server');
+        }
+        
+        return { userPhone, phoneCollected };
+    } catch (error) {
+        console.error('❌ Error checking phone number status:', error);
+        return { userPhone, phoneCollected };
+    }
+}
+
+// Add to global scope for testing
+window.checkPhoneNumberStatus = checkPhoneNumberStatus;

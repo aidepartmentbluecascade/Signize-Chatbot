@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign-nize Customer Support</title>
+    <link rel="icon" href="/sign-nize-logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Updated all class names to include ai__chatbot prefix -->
+    <div class="ai__chatbot-container">
+        <!-- Header Section -->
+        <!-- <header class="ai__chatbot-header">
+            <div class="ai__chatbot-header-content">
+                <div class="ai__chatbot-logo-section">
+                    <div class="ai__chatbot-logo-3d">
+                        <i class="fas fa-sign"></i>
+                    </div>
+                    <div class="ai__chatbot-brand-info">
+                        <h1>Sign-nize</h1>
+                        <p>Custom Sign Design & Production</p>
+                    </div>
+                </div>
+                <div class="ai__chatbot-header-stats">
+                    <div class="ai__chatbot-stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span>24/7 Support</span>
+                    </div>
+                    <div class="ai__chatbot-stat-item">
+                        <i class="fas fa-star"></i>
+                        <span>5-Star Service</span>
+                    </div>
+                </div>
+            </div>
+        </header> -->
+
+        <!-- Main Chat Interface -->
+        <div class="ai__chatbot-chat-container">
+            <div class="ai__chatbot-chat-window">
+                <div class="ai__chatbot-chat-header">
+                    <div class="ai__chatbot-chat-header-content">
+                        <div class="ai__chatbot-agent-info">
+                            <div class="ai__chatbot-signize-logo">
+                                <div class="ai__chatbot-logo-circle">
+                                    <span class="ai__chatbot-logo-text">SIGNIZE</span>
+                                    <div class="ai__chatbot-logo-accent"></div>
+                                </div>
+                            </div>
+                            <div class="ai__chatbot-agent-details">
+                                <h3>Signize</h3>
+                                <!-- <span class="ai__chatbot-status online">
+                                    <i class="fas fa-circle"></i>
+                                    Online
+                                </span> -->
+                            </div>
+                        </div>
+                        <div class="ai__chatbot-chat-controls">
+                            <button class="ai__chatbot-control-btn ai__chatbot-minimize-btn" id="minimizeBtn">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button class="ai__chatbot-control-btn ai__chatbot-close-btn" id="closeBtn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai__chatbot-chat-messages" id="chatMessages">
+                    <!-- Welcome Message -->
+                    <div class="ai__chatbot-message ai__chatbot-ai-message">
+                        <div class="ai__chatbot-message-avatar">
+                            <img src="https://45733428.fs1.hubspotusercontent-na2.net/hub/45733428/hubfs/unnamed%20(2)%20(1).png?width=108&height=108" alt="AI Assistant" class="ai__chatbot-robot-avatar">
+                        </div>
+                        <div class="ai__chatbot-message-content">
+                            <div class="ai__chatbot-message-bubble">
+                                <p>Hello! How can I assist you today? I'm here to help you with your custom sign design needs. 🎨</p>
+                            </div>
+                            <div class="ai__chatbot-message-time">Just now</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai__chatbot-chat-input-container">
+                    <!-- Email Field (hidden by default) -->
+                    <div class="ai__chatbot-email-field-container" id="emailFieldContainer" style="display: none;">
+                        <div class="ai__chatbot-email-input-wrapper">
+                            <input type="email" id="emailInput" placeholder="Enter your email address..." class="ai__chatbot-email-input">
+                            <button id="emailSubmitBtn" class="ai__chatbot-email-submit-btn">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                        <div class="ai__chatbot-email-validation" id="emailValidation"></div>
+                    </div>
+                    
+                    <!-- REMOVED: Logo upload section - not needed -->
+                    
+                    <div class="ai__chatbot-input-wrapper">
+                        <input type="text" id="messageInput" placeholder="Type your message here..." class="ai__chatbot-message-input">
+                        <button id="sendBtn" class="ai__chatbot-send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="ai__chatbot-quick-actions">
+                        <button class="ai__chatbot-quick-action-btn" data-action="start-design">
+                            <i class="fas fa-palette"></i>
+                            Start Design
+                        </button>
+                        <button class="ai__chatbot-quick-action-btn" data-action="get-quote">
+                            <i class="fas fa-calculator"></i>
+                            Get Quote
+                        </button>
+                        <button class="ai__chatbot-quick-action-btn" data-action="view-portfolio">
+                            <i class="fas fa-images"></i>
+                            View Portfolio
+                        </button>
+                        <button class="ai__chatbot-quick-action-btn" data-action="instant-call">
+                            <i class="fas fa-images"></i>
+                            Instant-call
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Action Button -->
+        <div class="ai__chatbot-fab-container">
+            <button class="ai__chatbot-fab" id="fabBtn">
+                <i class="fas fa-comments"></i>
+            </button>
+        </div>
+
+        <!-- Quote Form Modal -->
+        <div class="ai__chatbot-modal-overlay" id="quoteModal">
+            <div class="ai__chatbot-modal-content">
+                <div class="ai__chatbot-modal-header">
+                    <h2>Get Your Quote & Mockup</h2>
+                    <button class="ai__chatbot-modal-close" id="closeQuoteModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="ai__chatbot-modal-body">
+                    <form id="quoteForm">
+                        <!-- Logo Upload Section -->
+                        <div class="ai__chatbot-form-group">
+                            <label for="logoUploads">Logo Files (Optional)</label>
+                            <div class="ai__chatbot-logo-upload-container">
+                                <div class="ai__chatbot-logo-upload-area" id="logoUploadArea">
+                                    <div class="ai__chatbot-logo-upload-prompt">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Click to upload logo files or drag and drop</p>
+                                        <p class="ai__chatbot-upload-hint">Supports: JPG, PNG, PDF, AI, EPS (Max 10MB each)</p>
+                                    </div>
+                                    <input type="file" id="logoFileInput" name="logos" multiple accept=".jpg,.jpeg,.png,.pdf,.ai,.eps" style="display: none;">
+                                </div>
+                                <div class="ai__chatbot-logo-preview-container" id="logoPreviewContainer" style="display: none;">
+                                    <h4>Uploaded Logos:</h4>
+                                    <div class="ai__chatbot-logo-preview-list" id="logoPreviewList"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ai__chatbot-form-group">
+                            <label for="sizeDimensions">Size & Dimensions (Optional)</label>
+                            <div class="ai__chatbot-dimensions-container">
+                                <div class="ai__chatbot-dimension-input">
+                                    <label for="width">Width</label>
+                                    <div class="ai__chatbot-input-with-unit">
+                                        <input type="number" id="width" name="width" placeholder="Enter width" step="0.01" min="0">
+                                        <div class="ai__chatbot-unit-buttons">
+                                            <button type="button" class="ai__chatbot-unit-btn active" data-unit="inches" data-field="width">Inches</button>
+                                            <button type="button" class="ai__chatbot-unit-btn" data-unit="feet" data-field="width">Feet</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ai__chatbot-dimension-input">
+                                    <label for="height">Height</label>
+                                    <div class="ai__chatbot-input-with-unit">
+                                        <input type="number" id="height" name="height" placeholder="Enter height" step="0.01" min="0">
+                                        <div class="ai__chatbot-unit-buttons">
+                                            <button type="button" class="ai__chatbot-unit-btn active" data-unit="inches" data-field="height">Inches</button>
+                                            <button type="button" class="ai__chatbot-unit-btn" data-unit="feet" data-field="height">Feet</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="sizeDimensions" name="sizeDimensions">
+                        </div>
+                        
+                        <div class="ai__chatbot-form-group">
+                             <label>Material Preference (Optional)</label>
+                             <div class="ai__chatbot-checkbox-group">
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="materialPreference" value="metal">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Metal
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="materialPreference" value="acrylic">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Acrylic
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="materialPreference" value="aluminum">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Aluminum
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="materialPreference" value="wood">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Wood
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="materialPreference" value="other">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Other
+                                 </label>
+                             </div>
+                         </div>
+                         
+                         <div class="ai__chatbot-form-group">
+                             <label>Illumination (Optional)</label>
+                             <div class="ai__chatbot-checkbox-group">
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="illumination" value="no-lighting">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     No lighting
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="illumination" value="led-backlit">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     LED Backlit
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="illumination" value="front-lit">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Front Lit
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="illumination" value="halo-lit">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Halo Lit
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="illumination" value="channel-letters">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Channel Letters
+                                 </label>
+                             </div>
+                         </div>
+                         
+                         <div class="ai__chatbot-form-group">
+                             <label>Installation Surface (Optional)</label>
+                             <div class="ai__chatbot-checkbox-group">
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="installationSurface" value="brick-wall">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Brick Wall
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="installationSurface" value="concrete">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Concrete
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="installationSurface" value="drywall">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Drywall
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="installationSurface" value="metal-surface">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Metal Surface
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="installationSurface" value="wood-surface">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Wood Surface
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="installationSurface" value="other">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Other
+                                 </label>
+                             </div>
+                         </div>
+                         
+                         <div class="ai__chatbot_form-groups">
+                            <div class="ai__chatbot-form-group">
+                             <label for="cityState">City & State (Optional)</label>
+                             <input type="text" id="cityState" name="cityState" placeholder="e.g., New York, NY">
+                         </div>
+                         <div class="ai__chatbot-form-group">
+                             <label for="price">Price (Optional)</label>
+                             <div class="ai__chatbot-price-input-wrapper">
+                                 <span class="ai__chatbot-price-symbol">$</span>
+                                 <input type="number" id="price" name="price" placeholder="0.00" step="0.01" min="0">
+                             </div>
+                         </div>
+                         </div>
+                         
+                         <div class="ai__chatbot-form-group">
+                             <label for="budget">Budget Range (Optional)</label>
+                             <div class="ai__chatbot-checkbox-group">
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="under-500">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Under $500
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="500-1000">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     $500 - $1,000
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="1000-2500">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     $1,000 - $2,500
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="2500-5000">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     $2,500 - $5,000
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="5000-10000">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     $5,000 - $10,000
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="over-10000">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Over $10,000
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="budget" value="flexible">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Flexible
+                                 </label>
+                             </div>
+                         </div>
+                         
+                         <div class="ai__chatbot-form-group">
+                             <label>Placement (Optional)</label>
+                             <div class="ai__chatbot-checkbox-group">
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="placement" value="indoor">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Indoor
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="placement" value="outdoor">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Outdoor
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="placement" value="both">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Both Indoor & Outdoor
+                                 </label>
+                             </div>
+                         </div>
+                         
+                         <div class="ai__chatbot-form-group">
+                             <label>Deadline (Optional)</label>
+                             <div class="ai__chatbot-checkbox-group">
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="deadline" value="standard">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Standard (15-17 business days)
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="deadline" value="rush">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Rush (12 business days - 20% additional cost)
+                                 </label>
+                                 <label class="ai__chatbot-checkbox-item">
+                                     <input type="checkbox" name="deadline" value="flexible">
+                                     <span class="ai__chatbot-checkmark"></span>
+                                     Flexible
+                                 </label>
+                             </div>
+                         </div>
+                         
+                         
+                        
+                        <div class="ai__chatbot-form-group">
+                            <label for="additionalNotes">Additional Notes (Optional)</label>
+                            <textarea id="additionalNotes" name="additionalNotes" placeholder="Any additional requirements or special requests..."></textarea>
+                        </div>
+                        
+                        <div class="ai__chatbot-form-actions">
+                            <button type="button" class="ai__chatbot-btn-primary" id="submitQuoteBtn">Submit Quote Request</button>
+                            <button type="button" class="ai__chatbot-btn-secondary" id="cancelQuote">Cancel</button>
+                            <button type="button" class="ai__chatbot-btn-tertiary" id="startFreshBtn">Start Fresh</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Summary Modal -->
+        <div class="ai__chatbot-modal-overlay" id="quoteSummaryModal">
+            <div class="ai__chatbot-modal-content">
+                <div class="ai__chatbot-modal-header">
+                    <h2>Your Quote Summary</h2>
+                    <button class="ai__chatbot-modal-close" id="closeQuoteSummaryModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="ai__chatbot-modal-body">
+                    <div id="quoteSummaryContent"></div>
+                    <div class="ai__chatbot-quote-actions">
+                        <button class="ai__chatbot-btn-primary" id="requestChanges">Request Changes</button>
+                        <button class="ai__chatbot-btn-secondary" id="closeSummary">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SVG Icons -->
+    <svg style="display: none;">
+        <defs>
+            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <script src="/script.js"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from environment import load_environment
 from openai import OpenAI
 import json
@@ -49,6 +50,7 @@ from dropbox_auth import create_dropbox_client
 
 # Flask application setup
 app = Flask(__name__, template_folder="templates", static_folder="static")
+CORS(app)
 
 # Load production configuration
 from environment import get_flask_config
@@ -100,6 +102,37 @@ Email Collection Process:
 - CRITICAL: Even if the conversation seems to restart or customer says "Hi" again, if you already have their email, do NOT ask for it again.
 - CRITICAL: Email persists throughout the entire session - if customer says "bye" and then starts talking again, they still have the same email address.
 - CRITICAL: Only ask for email again if this is a completely new session or if the email was never collected.
+
+ CRITICAL: Phone number process:
+-If customer asks for call or any other related message, ask for their PHONE NUMBER.
+-If customer provides their phone number, save it in the session.
+-If customer does not provide their phone number, ask for it again.
+-If customer says "I need to speak with a sign expert immediately. Can you connect me?" or similar message, ask for their phone number.
+-If customer mentions "call me", "call you", "speak to someone", "talk to someone", "human", "representative", "expert", "agent", or similar phrases, ask for their phone number.
+-When asking for phone number, say: "I'd be happy to have someone call you! Could you please provide your phone number so I can have a sign expert reach out to you?"
+-Only ask for phone number once per session - if already collected, do not ask again.
+-CRITICAL: When asking for phone number, ALWAYS include [PHONE_NUMBER_TRIGGER] in your response to trigger the phone number popup.
+
+EXACT PHONE NUMBER TRIGGER PHRASES - ALWAYS ASK FOR PHONE:
+- "call me" or "call you"
+- "speak to someone" or "talk to someone"
+- "human" or "representative" or "expert" or "agent"
+- "I need to speak with someone"
+- "I want to talk to a person"
+- "Can someone call me?"
+- "I need help from a human"
+- "Connect me with someone"
+- "I want to speak with an expert"
+- ANY variation of the above phrases
+
+PHONE NUMBER RESPONSE FORMAT:
+"I'd be happy to have someone call you! Could you please provide your phone number so I can have a sign expert reach out to you?"
+
+Then include this special marker in your response: [PHONE_NUMBER_TRIGGER]
+
+CRITICAL: If phone number is already collected in the session, DO NOT ask for it again. Instead, respond with:
+"I'd be happy to have someone call you! I have your phone number on file and will have a sign expert reach out to you shortly. Is there anything else I can help you with regarding your sign needs?"
+
 
 SESSION MANAGEMENT & EMAIL PERSISTENCE:
 - Email addresses are collected once per session and persist throughout the entire conversation
@@ -393,6 +426,71 @@ def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
+def send_to_n8n_webhook(session_id, email, phone_number):
+    """Send user data to n8n webhook after phone number collection"""
+    import requests
+    from requests.auth import HTTPBasicAuth
+    
+    webhook_url = "https://arslanalvi.app.n8n.cloud/webhook/signize-ic"
+    username = "info@signize.us"
+    password = "Bluecascade.org786"
+    
+    # Prepare webhook data
+    webhook_data = {
+        "session_id": session_id,
+        "email": email,
+        "phone_number": phone_number,
+        "timestamp": datetime.now().isoformat(),
+        "source": "chromabot_phone_collection",
+        "event_type": "phone_number_collected"
+    }
+    
+    try:
+        print(f"📡 Sending webhook to n8n: {webhook_url}")
+        print(f"📊 Webhook data: {webhook_data}")
+        print(f"🔐 Using auth: {username}")
+        
+        response = requests.post(
+            webhook_url,
+            json=webhook_data,
+            auth=HTTPBasicAuth(username, password),
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'ChromaBot/1.0',
+                'Accept': 'application/json'
+            },
+            timeout=30
+        )
+        
+        print(f"📡 Webhook response status: {response.status_code}")
+        print(f"📡 Webhook response headers: {dict(response.headers)}")
+        
+        if response.status_code == 200:
+            print(f"✅ Webhook sent successfully to n8n: {response.status_code}")
+            try:
+                response_data = response.json()
+                print(f"📊 Webhook response data: {response_data}")
+            except:
+                print(f"📊 Webhook response text: {response.text}")
+            return True
+        else:
+            print(f"⚠️  Webhook failed with status {response.status_code}")
+            print(f"📄 Response text: {response.text}")
+            return False
+            
+    except requests.exceptions.Timeout:
+        print(f"⏰ Webhook request timed out after 30 seconds")
+        return False
+    except requests.exceptions.ConnectionError:
+        print(f"🔌 Webhook connection error - network or DNS issue")
+        return False
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Webhook request failed: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Unexpected webhook error: {e}")
+        return False
+
 # Route to serve the chatbot UI
 @app.route("/")
 def index():
@@ -416,7 +514,8 @@ def chat():
             "context_history": [],
             "conversation_state": "initial",
             "customer_info": {},
-            "email": email
+            "email": email,
+            "phone_number": ""
         }
     else:
         # Update email if provided
@@ -437,6 +536,24 @@ def chat():
         quote_form_triggered = "[QUOTE_FORM_TRIGGER]" in response
         if quote_form_triggered:
             response = response.replace("[QUOTE_FORM_TRIGGER]", "")
+        
+        # Check if response contains phone number trigger
+        phone_number_triggered = "[PHONE_NUMBER_TRIGGER]" in response
+        if phone_number_triggered:
+            response = response.replace("[PHONE_NUMBER_TRIGGER]", "")
+            
+            # Trigger webhook for every call request (not just first collection)
+            # This ensures the webhook fires on every call request, even if phone number already exists
+            if chat_sessions[session_id].get("email") and chat_sessions[session_id].get("phone_number"):
+                print(f"📱 Call request detected - triggering webhook for existing phone number")
+                webhook_result = send_to_n8n_webhook(
+                    session_id, 
+                    chat_sessions[session_id].get("email", ""), 
+                    chat_sessions[session_id].get("phone_number", "")
+                )
+                print(f"📱 Webhook result for call request: {webhook_result}")
+            else:
+                print(f"📱 Call request detected but missing email or phone number - webhook will be triggered when phone is collected")
         
         # Add assistant response to session history
         chat_sessions[session_id]["messages"].append({
@@ -465,7 +582,8 @@ def chat():
             db_result = mongodb_manager.save_chat_session(
                 session_id, 
                 chat_sessions[session_id].get("email", ""), 
-                chat_sessions[session_id]["messages"]
+                chat_sessions[session_id]["messages"],
+                chat_sessions[session_id].get("phone_number", "")
             )
             if db_result["success"]:
                 print(f"✅ Chat session saved to database: {db_result['action']}")
@@ -479,7 +597,8 @@ def chat():
             "message": response,
             "session_id": session_id,
             "message_count": len(chat_sessions[session_id]["messages"]),
-            "quote_form_triggered": quote_form_triggered
+            "quote_form_triggered": quote_form_triggered,
+            "phone_number_triggered": phone_number_triggered
         })
         
     except Exception as e:
@@ -545,6 +664,24 @@ CURRENT SESSION EMAIL: NOT COLLECTED
 """
         print("📧 Email context: NOT COLLECTED")
     
+    # Add phone number information to the system prompt
+    phone_context = ""
+    if session_data.get("phone_number"):
+        phone_context = f"""
+CURRENT SESSION PHONE: {session_data.get("phone_number")}
+- This phone number has already been collected
+- Do NOT ask for phone number again in this session
+- Use this phone number for call requests and order tracking
+"""
+        print(f"📱 Phone context injected: {session_data.get('phone_number')}")
+    else:
+        phone_context = """
+CURRENT SESSION PHONE: NOT COLLECTED
+- Phone number not yet provided
+- Ask for phone number when customer wants to speak with someone or get a call
+"""
+        print("📱 Phone context: NOT COLLECTED")
+    
     print(f"🔍 Email already collected: {email_already_collected}")
     print(f"📧 Email value: {email_value}")
     
@@ -569,10 +706,15 @@ CONTEXT INSTRUCTIONS:
 15. CRITICAL: The email {email_value if email_value else 'has not been collected yet'} - use this information to determine if email collection is needed.
 16. CRITICAL: Email persists throughout the session - if customer says "bye" and then talks again, they still have the same email.
 17. CRITICAL: Only ask for email if this is a completely new session or if email was never collected.
+18. CRITICAL: When customer mentions wanting to speak with someone, get a call, or talk to a human/expert, ask for their phone number and include [PHONE_NUMBER_TRIGGER] in your response.
+19. CRITICAL: Phone number collection is triggered by phrases like "call me", "speak to someone", "human", "representative", "expert", "agent", etc.
+20. CRITICAL: Only ask for phone number once per session - if already collected, do NOT ask again.
+21. CRITICAL: If phone number already exists in session, acknowledge the request and confirm you'll have someone call them using their existing number.
+22. CRITICAL: NEVER ask for phone number again if it's already been collected in the current session.
 """
     
     # Combine all context
-    full_prompt = system_prompt + email_context + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
+    full_prompt = system_prompt + email_context + phone_context + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
     
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -603,6 +745,7 @@ def validate_email_endpoint():
         return jsonify({"valid": False, "message": "Email is required"})
     
     is_valid = validate_email(email)
+    
     return jsonify({
         "valid": is_valid,
         "message": "Valid email format" if is_valid else "Invalid email format"
@@ -751,6 +894,53 @@ def upload_logo():
         traceback.print_exc()
         return jsonify({"success": False, "message": f"Upload failed: {str(e)}"}), 500
 
+# Route to save phone number
+@app.route("/save-phone", methods=["POST"])
+def save_phone():
+    print(">>> Save phone endpoint hit")
+    data = request.json
+    session_id = data.get("session_id")
+    phone_number = data.get("phone_number")
+    
+    if not session_id or not phone_number:
+        return jsonify({"error": "Session ID and phone number are required"}), 400
+    
+    try:
+        # Save phone number to database
+        result = mongodb_manager.update_phone_number(session_id, phone_number)
+        
+        if result["success"]:
+            # Also update in-memory session
+            if session_id in chat_sessions:
+                chat_sessions[session_id]["phone_number"] = phone_number
+            
+            # Send webhook to n8n
+            webhook_result = send_to_n8n_webhook(session_id, chat_sessions[session_id].get("email", ""), phone_number)
+            
+            return jsonify({
+                "success": True,
+                "message": "Phone number saved successfully",
+                "webhook_sent": webhook_result
+            })
+        else:
+            return jsonify({"error": result["error"]}), 500
+    except Exception as e:
+        return jsonify({"error": f"Failed to save phone number: {str(e)}"}), 500
+
+# Route to get phone number for a session
+@app.route("/get-phone/<session_id>", methods=["GET"])
+def get_phone(session_id):
+    print(f">>> Get phone endpoint hit for session {session_id}")
+    
+    try:
+        result = mongodb_manager.get_phone_number(session_id)
+        if result["success"]:
+            return jsonify({"phone_number": result["phone_number"]})
+        else:
+            return jsonify({"phone_number": None})
+    except Exception as e:
+        return jsonify({"error": f"Failed to get phone number: {str(e)}"}), 500
+
 # Route to get session messages
 @app.route("/session/<session_id>/messages", methods=["GET"])
 def get_session_messages(session_id):
@@ -772,16 +962,19 @@ def get_session_messages(session_id):
                     "email": email,
                     "context_history": [],
                     "conversation_state": "initial",
-                    "customer_info": {}
+                    "customer_info": {},
+                    "phone_number": session_data.get("phone_number", "")
                 }
             else:
                 chat_sessions[session_id]["messages"] = messages
                 chat_sessions[session_id]["email"] = email
+                chat_sessions[session_id]["phone_number"] = session_data.get("phone_number", "")
             
             return jsonify({
                 "success": True,
                 "messages": messages,
                 "email": email,
+                "phone_number": session_data.get("phone_number", ""),
                 "message_count": len(messages)
             })
         else:
@@ -789,10 +982,12 @@ def get_session_messages(session_id):
             if session_id in chat_sessions and "messages" in chat_sessions[session_id]:
                 messages = chat_sessions[session_id]["messages"]
                 email = chat_sessions[session_id].get("email", "")
+                phone_number = chat_sessions[session_id].get("phone_number", "")
                 return jsonify({
                     "success": True,
                     "messages": messages,
                     "email": email,
+                    "phone_number": phone_number,
                     "message_count": len(messages)
                 })
             else:
@@ -823,6 +1018,43 @@ def get_session_logos(session_id):
             return jsonify({"logos": []})
     except Exception as e:
         return jsonify({"error": f"Failed to get logos: {str(e)}"}), 500
+
+# Route to test n8n webhook connection
+@app.route("/test-webhook", methods=["GET"])
+def test_webhook():
+    """Test the n8n webhook connection"""
+    print(">>> Test webhook endpoint hit")
+    
+    try:
+        # Test webhook with sample data
+        test_result = send_to_n8n_webhook(
+            "test_session_123", 
+            "test@example.com", 
+            "+1234567890"
+        )
+        
+        if test_result:
+            return jsonify({
+                "success": True,
+                "message": "Webhook test successful",
+                "webhook_url": "https://arslanalvi.app.n8n.cloud/webhook/signize-ic",
+                "status": "connected"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Webhook test failed",
+                "webhook_url": "https://arslanalvi.app.n8n.cloud/webhook/signize-ic",
+                "status": "failed"
+            })
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Webhook test error: {str(e)}",
+            "webhook_url": "https://arslanalvi.app.n8n.cloud/webhook/signize-ic",
+            "status": "error"
+        }), 500
 
 # Run the Flask app
 if __name__ == "__main__":

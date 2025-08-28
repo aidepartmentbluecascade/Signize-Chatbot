@@ -600,6 +600,105 @@ body {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* Phone Field */
+.phone-field-container {
+    margin-bottom: 12px;
+    animation: slideDown 0.3s ease;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.phone-field-container.show {
+    display: block !important;
+}
+
+.phone-field-container.hidden {
+    display: none !important;
+}
+
+.phone-input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.phone-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.phone-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: var(--bg-primary);
+}
+
+.phone-input::placeholder {
+    color: var(--text-light);
+}
+
+.phone-submit-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.phone-submit-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.phone-submit-btn:active {
+    transform: scale(0.95);
+}
+
+.phone-submit-btn i {
+    font-size: 14px;
+}
+
+.phone-validation {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: none;
+}
+
+.phone-validation.valid {
+    display: block;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.phone-validation.invalid {
+    display: block;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
 @keyframes slideDown {
     from {
         opacity: 0;

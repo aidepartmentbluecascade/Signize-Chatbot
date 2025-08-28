@@ -77,3 +77,18 @@ def get_dropbox_config():
         return None
     
     return config
+
+def get_hubspot_config():
+    """Get HubSpot configuration from environment variables"""
+    load_dotenv()
+    
+    hubspot_token = os.getenv('HUBSPOT_TOKEN')
+    if not hubspot_token:
+        print("⚠️  HUBSPOT_TOKEN not found in environment variables")
+        print("   Please set HUBSPOT_TOKEN=your_hubspot_api_token")
+        return None
+    
+    print(f"✅ HubSpot token loaded: {hubspot_token[:20]}...")
+    return {
+        'token': hubspot_token
+    }

@@ -65,10 +65,12 @@ def split_text(text, chunk_size=1000, chunk_overlap=20):
             
             # Find the best breaking point
             break_points = [last_period, last_exclamation, last_question, last_newline]
-            best_break = max([p for p in break_points if p > start])
+            valid_breaks = [p for p in break_points if p > start]
             
-            if best_break > start:
-                end = best_break + 1  # Include the punctuation
+            if valid_breaks:
+                best_break = max(valid_breaks)
+                if best_break > start:
+                    end = best_break + 1  # Include the punctuation
         
         chunk = text[start:end].strip()
         if chunk:  # Only add non-empty chunks

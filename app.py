@@ -48,6 +48,199 @@ client = OpenAI(api_key=openai_key)
 # Dropbox configuration
 from dropbox_auth import create_dropbox_client
 
+# HubSpot integration functions
+def create_hubspot_contact(email, phone_number=None, first_name=None, last_name=None, company=None):
+    """Create or update a contact in HubSpot"""
+    try:
+        from environment import get_hubspot_config
+        hubspot_config = get_hubspot_config()
+        
+        if not hubspot_config:
+            print("⚠️  HubSpot configuration not available - skipping contact creation")
+            return {"success": False, "error": "HubSpot not configured"}
+        
+        import requests
+        
+        # Prepare contact properties
+        properties = {
+            "email": email
+        }
+        
+        if phone_number:
+            properties["phone"] = phone_number
+        if first_name:
+            properties["firstname"] = first_name
+        if last_name:
+            properties["lastname"] = last_name
+        if company:
+            properties["company"] = company
+        
+        # 1. Search for existing contact by email
+        search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+        search_payload = {
+            "filterGroups": [{
+                "filters": [{
+                    "propertyName": "email",
+                    "operator": "EQ",
+                    "value": email
+                }]
+            }],
+            "properties": ["email"],
+            "limit": 1
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {hubspot_config['token']}",
+            "Content-Type": "application/json"
+        }
+        
+        search_response = requests.post(search_url, json=search_payload, headers=headers)
+        search_response.raise_for_status()
+        
+        existing_contacts = search_response.json().get("results", [])
+        
+        if existing_contacts:
+            # 2. Update existing contact
+            contact_id = existing_contacts[0]["id"]
+            update_url = f"https://api.hubapi.com/crm/v3/objects/contacts/{contact_id}"
+            
+            update_payload = {"properties": properties}
+            update_response = requests.patch(update_url, json=update_payload, headers=headers)
+            update_response.raise_for_status()
+            
+            print(f"✅ HubSpot contact updated: {email}")
+            return {
+                "success": True,
+                "action": "updated",
+                "contact_id": contact_id,
+                "message": "Contact already existed — updated instead"
+            }
+        else:
+            # 3. Create new contact
+            create_url = "https://api.hubapi.com/crm/v3/objects/contacts"
+            create_payload = {"properties": properties}
+            
+            create_response = requests.post(create_url, json=create_payload, headers=headers)
+            create_response.raise_for_status()
+            
+            new_contact = create_response.json()
+            print(f"✅ HubSpot contact created: {email}")
+            return {
+                "success": True,
+                "action": "created",
+                "contact_id": new_contact.get("id"),
+                "message": "New contact created"
+            }
+            
+    except requests.exceptions.RequestException as e:
+        # Handle 409 conflict: contact already exists -> extract ID or search by email
+        try:
+            if hasattr(e, 'response') and e.response is not None and e.response.status_code == 409:
+                resp_text = e.response.text or ""
+                # Try to extract Existing ID from error text
+                import re as _re
+                m = _re.search(r"Existing ID:\s*(\d+)", resp_text)
+                if m:
+                    existing_id = m.group(1)
+                    print(f"ℹ️  Conflict received; using existing HubSpot contact ID: {existing_id}")
+                    return {
+                        "success": True,
+                        "action": "existing",
+                        "contact_id": existing_id,
+                        "message": "Contact already existed — using existing ID"
+                    }
+                # Fallback: run a search by email to fetch the ID
+                from environment import get_hubspot_config
+                hubspot_config = get_hubspot_config()
+                if hubspot_config:
+                    import requests as _rq
+                    headers = {
+                        "Authorization": f"Bearer {hubspot_config['token']}",
+                        "Content-Type": "application/json"
+                    }
+                    search_url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+                    search_payload = {
+                        "filterGroups": [{
+                            "filters": [{
+                                "propertyName": "email",
+                                "operator": "EQ",
+                                "value": email
+                            }]
+                        }],
+                        "limit": 1
+                    }
+                    s_resp = _rq.post(search_url, json=search_payload, headers=headers, timeout=20)
+                    if s_resp.ok:
+                        results = s_resp.json().get("results", [])
+                        if results:
+                            existing_id = results[0].get("id")
+                            print(f"ℹ️  Conflict; found existing contact via search: {existing_id}")
+                            return {
+                                "success": True,
+                                "action": "existing",
+                                "contact_id": existing_id,
+                                "message": "Contact already existed — resolved via search"
+                            }
+        except Exception as parse_err:
+            print(f"⚠️  Failed handling 409 fallback: {parse_err}")
+        error_msg = f"HubSpot API request failed: {str(e)}"
+        if hasattr(e, 'response') and e.response is not None:
+            error_msg += f" - Status: {e.response.status_code}, Response: {e.response.text}"
+        print(f"❌ {error_msg}")
+        return {"success": False, "error": error_msg}
+    except Exception as e:
+        error_msg = f"HubSpot contact creation failed: {str(e)}"
+        print(f"❌ {error_msg}")
+        return {"success": False, "error": error_msg}
+
+def hubspot_patch_conversation(contact_id: str, conversation_text: str):
+    """Patch chatbot_conversation property for a HubSpot contact"""
+    try:
+        from environment import get_hubspot_config
+        hubspot_config = get_hubspot_config()
+        if not hubspot_config:
+            return {"success": False, "error": "HubSpot not configured"}
+
+        import requests
+        url = f"https://api.hubapi.com/crm/v3/objects/contacts/{contact_id}"
+        headers = {
+            "Authorization": f"Bearer {hubspot_config['token']}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        payload = {
+            "properties": {
+                "chatbot_conversation": conversation_text
+            }
+        }
+        resp = requests.patch(url, json=payload, headers=headers, timeout=20)
+        resp.raise_for_status()
+        print(f"✅ HubSpot conversation patched for contact {contact_id}")
+        return {"success": True}
+    except Exception as e:
+        print(f"❌ HubSpot PATCH failed: {e}")
+        return {"success": False, "error": str(e)}
+
+def build_conversation_text(messages: list) -> str:
+    import re
+    
+    lines = []
+    for m in messages[-100:]:  # cap to last 100 messages to avoid huge payloads
+        role = m.get("role", "")
+        content = m.get("content", "")
+        
+        # Strip HTML tags and asterisks for HubSpot
+        # Remove HTML bold tags
+        content = re.sub(r'<b>(.*?)</b>', r'\1', content)
+        # Remove asterisks
+        content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
+        # Remove any remaining HTML tags
+        content = re.sub(r'<[^>]+>', '', content)
+        
+        prefix = "User" if role == "user" else ("Assistant" if role == "assistant" else role)
+        lines.append(f"{prefix}: {content}")
+    return "\n".join(lines)
+
 # Flask application setup
 app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
@@ -103,36 +296,6 @@ Email Collection Process:
 - CRITICAL: Email persists throughout the entire session - if customer says "bye" and then starts talking again, they still have the same email address.
 - CRITICAL: Only ask for email again if this is a completely new session or if the email was never collected.
 
- CRITICAL: Phone number process:
--If customer asks for call or any other related message, ask for their PHONE NUMBER.
--If customer provides their phone number, save it in the session.
--If customer does not provide their phone number, ask for it again.
--If customer says "I need to speak with a sign expert immediately. Can you connect me?" or similar message, ask for their phone number.
--If customer mentions "call me", "call you", "speak to someone", "talk to someone", "human", "representative", "expert", "agent", or similar phrases, ask for their phone number.
--When asking for phone number, say: "I'd be happy to have someone call you! Could you please provide your phone number so I can have a sign expert reach out to you?"
--Only ask for phone number once per session - if already collected, do not ask again.
--CRITICAL: When asking for phone number, ALWAYS include [PHONE_NUMBER_TRIGGER] in your response to trigger the phone number popup.
-
-EXACT PHONE NUMBER TRIGGER PHRASES - ALWAYS ASK FOR PHONE:
-- "call me" or "call you"
-- "speak to someone" or "talk to someone"
-- "human" or "representative" or "expert" or "agent"
-- "I need to speak with someone"
-- "I want to talk to a person"
-- "Can someone call me?"
-- "I need help from a human"
-- "Connect me with someone"
-- "I want to speak with an expert"
-- ANY variation of the above phrases
-
-PHONE NUMBER RESPONSE FORMAT:
-"I'd be happy to have someone call you! Could you please provide your phone number so I can have a sign expert reach out to you?"
-
-Then include this special marker in your response: [PHONE_NUMBER_TRIGGER]
-
-CRITICAL: If phone number is already collected in the session, DO NOT ask for it again. Instead, respond with:
-"I'd be happy to have someone call you! I have your phone number on file and will have a sign expert reach out to you shortly. Is there anything else I can help you with regarding your sign needs?"
-
 
 SESSION MANAGEMENT & EMAIL PERSISTENCE:
 - Email addresses are collected once per session and persist throughout the entire conversation
@@ -178,7 +341,8 @@ When customers want to update or modify their existing quote:
 
 After Form Submission:
 - If customer says they want changes, acknowledge and let them know they can modify the form.
-- If customer says no changes needed, simply say: "Perfect! Please email your logo files to info@signize.us so our designers can work with your brand assets. We'll review your requirements and get back to you with a mockup and quote within a few hours."
+- If customer says no changes needed, simply say: "  We'll review your requirements and get back to you with a mockup and quote within a few hours."
+- After customer submit the form, respond with: "Thank you for submitting the form. We'll review your requirements and get back to you with a mockup and quote within a few hours."
 
 The form will collect:
 - Size and dimensions
@@ -227,7 +391,6 @@ RESTAURANT SIGNAGE GUIDANCE:
   * 2D acrylic signs: Clean, modern look, great for indoor/outdoor, cost-effective
   * 3D metal signs: Premium appearance, excellent durability, higher cost
   * LED backlit signs: Great visibility at night, energy-efficient
-  * Vinyl graphics: Flexible for windows, easy to update, budget-friendly
 - Always provide helpful comparisons when customers ask about different materials
 - Consider restaurant atmosphere, budget, and location when making recommendations
 
@@ -275,7 +438,16 @@ MATERIAL COMPARISON HANDLING:
 - When customers ask about different materials (e.g., "2D acrylic vs 3D metal"), provide helpful comparisons
 - Consider factors like cost, durability, appearance, and suitability for their specific use case
 - Always answer material questions directly - do NOT redirect to generic responses
-- Provide specific advice based on their needs (restaurant, office, retail, etc.) """
+- Provide specific advice based on their needs (restaurant, office, retail, etc.)
+
+RESPONSE FORMATTING:
+- When providing information about signs, use clear headings with HTML bold tags like <b>Heading</b> and provide detailed, helpful responses.
+- Always format your responses with proper headings using <b>Heading</b> format and provide comprehensive information.
+- CRITICAL: NEVER use asterisks (**) anywhere in your responses - use HTML bold tags instead.
+- Use <b>Sub-heading</b> format for any sub-sections or bullet point headers.
+- All headings, sub-headings, and emphasized text should use HTML bold tags like <b>Text</b>, never asterisks like **Text**.
+- If you need to emphasize any text, use <b>text</b> format, not **text** format.
+- This applies to ALL text formatting in your responses."""
 
 def save_session_to_sheets(session_id, email, chat_history, update_existing=False):
     """Save session data to Google Sheets - one row per session with full conversation"""
@@ -287,27 +459,24 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
         if not worksheet:
             print("⚠️  Google Sheets not available - skipping Google Sheets save")
             return False
-        
-        # Convert chat history to a readable format
+   
         conversation_text = ""
         for i, message in enumerate(chat_history):
             role = "User" if message["role"] == "user" else "Assistant"
             conversation_text += f"{role}: {message['content']}\n"
         
-        # Get logo URLs from session data and add to conversation
+    
         logo_urls = []
         if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
             for logo in chat_sessions[session_id]["logos"]:
                 if "dropbox_url" in logo:
                     logo_urls.append(logo["dropbox_url"])
-        
-        # Add logo URLs to conversation if available
+ 
         if logo_urls:
             conversation_text += "\n\n--- LOGO FILES ---\n"
             for i, url in enumerate(logo_urls, 1):
                 conversation_text += f"Logo {i}: {url}\n"
-        
-        # Prepare session data - all in one row
+      
         session_data = {
             "session_id": session_id,
             "email": email,
@@ -317,7 +486,7 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
             "status": "active"
         }
         
-        # Add to Google Sheets - one row with all data
+  
         row = [
             session_data["session_id"],
             session_data["email"],
@@ -326,33 +495,31 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
             session_data["conversation"],
             session_data["status"]
         ]
-        
-        # Check if session already exists in the sheet
+
         if session_id in saved_sessions and update_existing:
-            # Find and update existing row
+        
             try:
-                # Get all values from the sheet
+      
                 all_values = worksheet.get_all_values()
                 session_row = None
                 
-                # Find the row with this session_id
+         
                 for i, row_data in enumerate(all_values):
                     if row_data and len(row_data) > 0 and row_data[0] == session_id:
-                        session_row = i + 1  # Google Sheets is 1-indexed
+                        session_row = i + 1  
                         break
                 
                 if session_row:
-                    # Get existing conversation and append new messages
+              
                     existing_conversation = ""
-                    if len(row_data) > 4:  # Make sure conversation column exists
+                    if len(row_data) > 4: 
                         existing_conversation = row_data[4] if row_data[4] else ""
-                    
-                    # Append new messages to existing conversation
+        
                     updated_conversation = existing_conversation
                     if existing_conversation:
                         updated_conversation += "\n\n--- New Messages ---\n"
                     
-                    # Add only the new messages (messages after the existing count)
+             
                     existing_count = int(row_data[3]) if len(row_data) > 3 and row_data[3].isdigit() else 0
                     new_messages = chat_history[existing_count:]
                     
@@ -363,21 +530,19 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                             updated_conversation += f"\n👤 User: {content}"
                         elif role == "assistant":
                             updated_conversation += f"\n🤖 Assistant: {content}"
-                    
-                    # Get logo URLs and add to conversation if not already present
+         
                     logo_urls = []
                     if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
                         for logo in chat_sessions[session_id]["logos"]:
                             if "dropbox_url" in logo:
                                 logo_urls.append(logo["dropbox_url"])
-                    
-                    # Add logo URLs if available and not already in conversation
+                
                     if logo_urls and "--- LOGO FILES ---" not in updated_conversation:
                         updated_conversation += "\n\n--- LOGO FILES ---\n"
                         for i, url in enumerate(logo_urls, 1):
                             updated_conversation += f"Logo {i}: {url}\n"
                     
-                    # Update the row with new conversation and message count
+               
                     updated_row = [
                         session_data["session_id"],
                         session_data["email"],
@@ -392,7 +557,7 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                     return True
                 else:
                     print(f"⚠️  Session {session_id} not found in sheet, appending new row")
-                    # Fall back to appending if not found
+        
                     worksheet.append_row(row)
                     saved_sessions.add(session_id)
                     print(f"✅ Session {session_id} appended to Google Sheets")
@@ -400,13 +565,13 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                     
             except Exception as update_error:
                 print(f"⚠️  Failed to update existing row: {update_error}")
-                # Fall back to appending
+            
                 worksheet.append_row(row)
                 saved_sessions.add(session_id)
                 print(f"✅ Session {session_id} appended to Google Sheets (fallback)")
                 return True
         else:
-            # First time saving this session
+
             try:
                 worksheet.append_row(row)
                 saved_sessions.add(session_id)
@@ -426,78 +591,15 @@ def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
-def send_to_n8n_webhook(session_id, email, phone_number):
-    """Send user data to n8n webhook after phone number collection"""
-    import requests
-    from requests.auth import HTTPBasicAuth
-    
-    webhook_url = "https://arslanalvi.app.n8n.cloud/webhook/signize-ic"
-    username = "info@signize.us"
-    password = "Bluecascade.org786"
-    
-    # Prepare webhook data
-    webhook_data = {
-        "session_id": session_id,
-        "email": email,
-        "phone_number": phone_number,
-        "timestamp": datetime.now().isoformat(),
-        "source": "chromabot_phone_collection",
-        "event_type": "phone_number_collected"
-    }
-    
-    try:
-        print(f"📡 Sending webhook to n8n: {webhook_url}")
-        print(f"📊 Webhook data: {webhook_data}")
-        print(f"🔐 Using auth: {username}")
-        
-        response = requests.post(
-            webhook_url,
-            json=webhook_data,
-            auth=HTTPBasicAuth(username, password),
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': 'ChromaBot/1.0',
-                'Accept': 'application/json'
-            },
-            timeout=30
-        )
-        
-        print(f"📡 Webhook response status: {response.status_code}")
-        print(f"📡 Webhook response headers: {dict(response.headers)}")
-        
-        if response.status_code == 200:
-            print(f"✅ Webhook sent successfully to n8n: {response.status_code}")
-            try:
-                response_data = response.json()
-                print(f"📊 Webhook response data: {response_data}")
-            except:
-                print(f"📊 Webhook response text: {response.text}")
-            return True
-        else:
-            print(f"⚠️  Webhook failed with status {response.status_code}")
-            print(f"📄 Response text: {response.text}")
-            return False
-            
-    except requests.exceptions.Timeout:
-        print(f"⏰ Webhook request timed out after 30 seconds")
-        return False
-    except requests.exceptions.ConnectionError:
-        print(f"🔌 Webhook connection error - network or DNS issue")
-        return False
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Webhook request failed: {e}")
-        return False
-    except Exception as e:
-        print(f"❌ Unexpected webhook error: {e}")
-        return False
 
-# Route to serve the chatbot UI
+
+
 @app.route("/")
 def index():
     """Serve the main chatbot page (index.html)."""
     return render_template("index.html")
 
-# Route to handle user messages
+
 @app.route("/chat", methods=["POST"])
 def chat():
     print(">>> /chat endpoint hit")
@@ -507,22 +609,39 @@ def chat():
     print("Message received:", user_message)
     print("Email:", email)
 
-    # Initialize session if it doesn't exist
+ 
     if session_id not in chat_sessions:
         chat_sessions[session_id] = {
             "messages": [],
             "context_history": [],
             "conversation_state": "initial",
             "customer_info": {},
-            "email": email,
-            "phone_number": ""
+            "email": email
         }
     else:
-        # Update email if provided
+        
         if email:
             chat_sessions[session_id]["email"] = email
     
-    # Add user message to session history
+    try:
+        current_email = chat_sessions[session_id].get("email")
+        has_contact_id = chat_sessions[session_id].get("hubspot_contact_id")
+        if current_email and not has_contact_id:
+            print(f"🔎 No hubspot_contact_id for session {session_id}. Upserting contact for {current_email}...")
+            upsert_result = create_hubspot_contact(current_email)
+            if upsert_result.get("success") and upsert_result.get("contact_id"):
+                contact_id = upsert_result.get("contact_id")
+                chat_sessions[session_id]["hubspot_contact_id"] = contact_id
+                try:
+                    mongodb_manager.update_hubspot_contact_id(session_id, contact_id)
+                    print(f"✅ hubspot_contact_id stored for session {session_id}: {contact_id}")
+                except Exception as e:
+                    print(f"⚠️  Failed to store hubspot_contact_id in DB: {e}")
+            else:
+                print(f"⚠️  HubSpot upsert failed or no contact_id returned: {upsert_result}")
+    except Exception as e:
+        print(f"⚠️  Error ensuring HubSpot contact for session: {e}")
+  
     chat_sessions[session_id]["messages"].append({
         "role": "user",
         "content": user_message
@@ -536,24 +655,6 @@ def chat():
         quote_form_triggered = "[QUOTE_FORM_TRIGGER]" in response
         if quote_form_triggered:
             response = response.replace("[QUOTE_FORM_TRIGGER]", "")
-        
-        # Check if response contains phone number trigger
-        phone_number_triggered = "[PHONE_NUMBER_TRIGGER]" in response
-        if phone_number_triggered:
-            response = response.replace("[PHONE_NUMBER_TRIGGER]", "")
-            
-            # Trigger webhook for every call request (not just first collection)
-            # This ensures the webhook fires on every call request, even if phone number already exists
-            if chat_sessions[session_id].get("email") and chat_sessions[session_id].get("phone_number"):
-                print(f"📱 Call request detected - triggering webhook for existing phone number")
-                webhook_result = send_to_n8n_webhook(
-                    session_id, 
-                    chat_sessions[session_id].get("email", ""), 
-                    chat_sessions[session_id].get("phone_number", "")
-                )
-                print(f"📱 Webhook result for call request: {webhook_result}")
-            else:
-                print(f"📱 Call request detected but missing email or phone number - webhook will be triggered when phone is collected")
         
         # Add assistant response to session history
         chat_sessions[session_id]["messages"].append({
@@ -582,8 +683,7 @@ def chat():
             db_result = mongodb_manager.save_chat_session(
                 session_id, 
                 chat_sessions[session_id].get("email", ""), 
-                chat_sessions[session_id]["messages"],
-                chat_sessions[session_id].get("phone_number", "")
+                chat_sessions[session_id]["messages"]
             )
             if db_result["success"]:
                 print(f"✅ Chat session saved to database: {db_result['action']}")
@@ -593,12 +693,48 @@ def chat():
             print(f"❌ Database save error: {db_error}")
         
         print(f"Generated response for session {session_id}:", response)
+
+        # After generating and saving, optionally sync conversation to HubSpot if 1 hour elapsed
+        try:
+            contact_id = None
+            if session_id in chat_sessions:
+                contact_id = chat_sessions[session_id].get("hubspot_contact_id")
+            if not contact_id:
+                # Try reading from DB for this session
+                db_session = mongodb_manager.get_chat_session(session_id)
+                if db_session.get("success"):
+                    contact_id = db_session["session"].get("hubspot_contact_id")
+
+            if contact_id:
+                # Determine last sync
+                last_sync_iso = None
+                db_session = mongodb_manager.get_chat_session(session_id)
+                if db_session.get("success"):
+                    last_sync_iso = db_session["session"].get("hubspot_last_sync_at")
+
+                should_sync = True
+                if last_sync_iso:
+                    try:
+                        last_sync_dt = datetime.fromisoformat(last_sync_iso.replace("Z", "+00:00"))
+                        # Sync if at least 30 seconds have passed since last sync
+                        should_sync = (datetime.utcnow() - last_sync_dt).total_seconds() >= 30
+                    except Exception:
+                        should_sync = True
+
+                if should_sync:
+                    conv_text = build_conversation_text(chat_sessions[session_id]["messages"])
+                    patch_result = hubspot_patch_conversation(contact_id, conv_text)
+                    if patch_result.get("success"):
+                        mongodb_manager.update_hubspot_last_sync(session_id, datetime.utcnow().isoformat() + "Z")
+                    else:
+                        print(f"⚠️  HubSpot sync skipped/failed: {patch_result.get('error')}")
+        except Exception as sync_err:
+            print(f"⚠️  HubSpot sync error: {sync_err}")
         return jsonify({
             "message": response,
             "session_id": session_id,
             "message_count": len(chat_sessions[session_id]["messages"]),
-            "quote_form_triggered": quote_form_triggered,
-            "phone_number_triggered": phone_number_triggered
+            "quote_form_triggered": quote_form_triggered
         })
         
     except Exception as e:
@@ -664,24 +800,6 @@ CURRENT SESSION EMAIL: NOT COLLECTED
 """
         print("📧 Email context: NOT COLLECTED")
     
-    # Add phone number information to the system prompt
-    phone_context = ""
-    if session_data.get("phone_number"):
-        phone_context = f"""
-CURRENT SESSION PHONE: {session_data.get("phone_number")}
-- This phone number has already been collected
-- Do NOT ask for phone number again in this session
-- Use this phone number for call requests and order tracking
-"""
-        print(f"📱 Phone context injected: {session_data.get('phone_number')}")
-    else:
-        phone_context = """
-CURRENT SESSION PHONE: NOT COLLECTED
-- Phone number not yet provided
-- Ask for phone number when customer wants to speak with someone or get a call
-"""
-        print("📱 Phone context: NOT COLLECTED")
-    
     print(f"🔍 Email already collected: {email_already_collected}")
     print(f"📧 Email value: {email_value}")
     
@@ -706,15 +824,10 @@ CONTEXT INSTRUCTIONS:
 15. CRITICAL: The email {email_value if email_value else 'has not been collected yet'} - use this information to determine if email collection is needed.
 16. CRITICAL: Email persists throughout the session - if customer says "bye" and then talks again, they still have the same email.
 17. CRITICAL: Only ask for email if this is a completely new session or if email was never collected.
-18. CRITICAL: When customer mentions wanting to speak with someone, get a call, or talk to a human/expert, ask for their phone number and include [PHONE_NUMBER_TRIGGER] in your response.
-19. CRITICAL: Phone number collection is triggered by phrases like "call me", "speak to someone", "human", "representative", "expert", "agent", etc.
-20. CRITICAL: Only ask for phone number once per session - if already collected, do NOT ask again.
-21. CRITICAL: If phone number already exists in session, acknowledge the request and confirm you'll have someone call them using their existing number.
-22. CRITICAL: NEVER ask for phone number again if it's already been collected in the current session.
 """
     
     # Combine all context
-    full_prompt = system_prompt + email_context + phone_context + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
+    full_prompt = system_prompt + email_context + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
     
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -740,15 +853,55 @@ def validate_email_endpoint():
     print(">>> Email validation endpoint hit")
     data = request.json
     email = data.get("email", "")
+    session_id = data.get("session_id")
     
     if not email:
         return jsonify({"valid": False, "message": "Email is required"})
     
     is_valid = validate_email(email)
     
+    if is_valid:
+        # Create/update contact in HubSpot when email is valid
+        print(f"📧 Valid email detected - creating/updating HubSpot contact: {email}")
+        hubspot_result = create_hubspot_contact(email)
+
+        contact_id = None
+        if hubspot_result.get("success"):
+            print(f"✅ HubSpot contact {hubspot_result['action']}: {email}")
+            contact_id = hubspot_result.get("contact_id")
+            # Save contact_id to session and MongoDB if available
+            if session_id and contact_id:
+                if session_id not in chat_sessions:
+                    chat_sessions[session_id] = {"messages": [], "context_history": [], "conversation_state": "initial", "customer_info": {}, "email": email}
+                chat_sessions[session_id]["email"] = email
+                chat_sessions[session_id]["hubspot_contact_id"] = contact_id
+                try:
+                    mongodb_manager.update_hubspot_contact_id(session_id, contact_id)
+                    print(f"✅ Saved hubspot_contact_id to MongoDB for session {session_id}")
+                except Exception as db_err:
+                    print(f"⚠️  Failed saving hubspot_contact_id to MongoDB: {db_err}")
+
+            return jsonify({
+                "valid": True,
+                "message": "Valid email format",
+                "hubspot_contact": {
+                    "action": hubspot_result.get("action"),
+                    "contact_id": contact_id,
+                    "message": hubspot_result.get("message")
+                }
+            })
+        else:
+            print(f"⚠️  HubSpot contact creation failed: {hubspot_result.get('error', 'Unknown error')}")
+            # Still return valid email even if HubSpot fails
+            return jsonify({
+                "valid": True,
+                "message": "Valid email format (HubSpot sync failed)",
+                "hubspot_error": hubspot_result.get("error")
+            })
+    
     return jsonify({
-        "valid": is_valid,
-        "message": "Valid email format" if is_valid else "Invalid email format"
+        "valid": False,
+        "message": "Invalid email format"
     })
 
 # Route to save quote form data
@@ -894,52 +1047,7 @@ def upload_logo():
         traceback.print_exc()
         return jsonify({"success": False, "message": f"Upload failed: {str(e)}"}), 500
 
-# Route to save phone number
-@app.route("/save-phone", methods=["POST"])
-def save_phone():
-    print(">>> Save phone endpoint hit")
-    data = request.json
-    session_id = data.get("session_id")
-    phone_number = data.get("phone_number")
-    
-    if not session_id or not phone_number:
-        return jsonify({"error": "Session ID and phone number are required"}), 400
-    
-    try:
-        # Save phone number to database
-        result = mongodb_manager.update_phone_number(session_id, phone_number)
-        
-        if result["success"]:
-            # Also update in-memory session
-            if session_id in chat_sessions:
-                chat_sessions[session_id]["phone_number"] = phone_number
-            
-            # Send webhook to n8n
-            webhook_result = send_to_n8n_webhook(session_id, chat_sessions[session_id].get("email", ""), phone_number)
-            
-            return jsonify({
-                "success": True,
-                "message": "Phone number saved successfully",
-                "webhook_sent": webhook_result
-            })
-        else:
-            return jsonify({"error": result["error"]}), 500
-    except Exception as e:
-        return jsonify({"error": f"Failed to save phone number: {str(e)}"}), 500
 
-# Route to get phone number for a session
-@app.route("/get-phone/<session_id>", methods=["GET"])
-def get_phone(session_id):
-    print(f">>> Get phone endpoint hit for session {session_id}")
-    
-    try:
-        result = mongodb_manager.get_phone_number(session_id)
-        if result["success"]:
-            return jsonify({"phone_number": result["phone_number"]})
-        else:
-            return jsonify({"phone_number": None})
-    except Exception as e:
-        return jsonify({"error": f"Failed to get phone number: {str(e)}"}), 500
 
 # Route to get session messages
 @app.route("/session/<session_id>/messages", methods=["GET"])
@@ -962,19 +1070,16 @@ def get_session_messages(session_id):
                     "email": email,
                     "context_history": [],
                     "conversation_state": "initial",
-                    "customer_info": {},
-                    "phone_number": session_data.get("phone_number", "")
+                    "customer_info": {}
                 }
             else:
                 chat_sessions[session_id]["messages"] = messages
                 chat_sessions[session_id]["email"] = email
-                chat_sessions[session_id]["phone_number"] = session_data.get("phone_number", "")
             
             return jsonify({
                 "success": True,
                 "messages": messages,
                 "email": email,
-                "phone_number": session_data.get("phone_number", ""),
                 "message_count": len(messages)
             })
         else:
@@ -982,12 +1087,10 @@ def get_session_messages(session_id):
             if session_id in chat_sessions and "messages" in chat_sessions[session_id]:
                 messages = chat_sessions[session_id]["messages"]
                 email = chat_sessions[session_id].get("email", "")
-                phone_number = chat_sessions[session_id].get("phone_number", "")
                 return jsonify({
                     "success": True,
                     "messages": messages,
                     "email": email,
-                    "phone_number": phone_number,
                     "message_count": len(messages)
                 })
             else:
@@ -1019,42 +1122,43 @@ def get_session_logos(session_id):
     except Exception as e:
         return jsonify({"error": f"Failed to get logos: {str(e)}"}), 500
 
-# Route to test n8n webhook connection
-@app.route("/test-webhook", methods=["GET"])
-def test_webhook():
-    """Test the n8n webhook connection"""
-    print(">>> Test webhook endpoint hit")
-    
+
+
+# Route to test HubSpot integration
+@app.route("/test-hubspot", methods=["GET"])
+def test_hubspot():
+    """Test HubSpot contact creation functionality"""
     try:
-        # Test webhook with sample data
-        test_result = send_to_n8n_webhook(
-            "test_session_123", 
-            "test@example.com", 
-            "+1234567890"
-        )
+        from environment import get_hubspot_config
+        hubspot_config = get_hubspot_config()
         
-        if test_result:
-            return jsonify({
-                "success": True,
-                "message": "Webhook test successful",
-                "webhook_url": "https://arslanalvi.app.n8n.cloud/webhook/signize-ic",
-                "status": "connected"
-            })
-        else:
+        if not hubspot_config:
             return jsonify({
                 "success": False,
-                "message": "Webhook test failed",
-                "webhook_url": "https://arslanalvi.app.n8n.cloud/webhook/signize-ic",
-                "status": "failed"
+                "message": "HubSpot not configured - please set HUBSPOT_TOKEN in environment",
+                "status": "not_configured"
             })
-            
+        
+        # Test contact creation with sample data
+        test_email = f"test_{int(time.time())}@example.com"
+        test_phone = "+1234567890"
+        
+        print(f"🧪 Testing HubSpot contact creation: {test_email}")
+        hubspot_result = create_hubspot_contact(test_email, phone_number=test_phone)
+        
+        return jsonify({
+            "success": True,
+            "message": "HubSpot test successful",
+            "status": "connected",
+            "test_email": test_email,
+            "hubspot_result": hubspot_result
+        })
     except Exception as e:
         return jsonify({
             "success": False,
-            "message": f"Webhook test error: {str(e)}",
-            "webhook_url": "https://arslanalvi.app.n8n.cloud/webhook/signize-ic",
+            "message": f"HubSpot test failed: {str(e)}",
             "status": "error"
-        }), 500
+        })
 
 # Run the Flask app
 if __name__ == "__main__":

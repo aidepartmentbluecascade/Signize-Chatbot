@@ -250,6 +250,85 @@ class MongoDBManager:
             print(f"❌ Error reading all quotes locally: {e}")
             return {"success": False, "error": str(e)}
 
+    def update_hubspot_contact_id(self, session_id, contact_id: str):
+        """Persist HubSpot contact_id for a session (Atlas or local fallback)"""
+        if not self.connected:
+            return self._update_hubspot_contact_id_locally(session_id, contact_id)
+        try:
+            result = self.quotes_collection.update_one(
+                {"session_id": session_id},
+                {"$set": {"hubspot_contact_id": contact_id, "updated_at": datetime.now()}},
+                upsert=True
+            )
+            if result.matched_count > 0 or result.upserted_id:
+                print(f"✅ HubSpot contact_id saved for session {session_id}")
+                return {"success": True}
+            return {"success": False, "error": "No document matched or upsert failed"}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot contact_id to MongoDB: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _update_hubspot_contact_id_locally(self, session_id, contact_id: str):
+        """Persist HubSpot contact_id locally in chat_sessions file"""
+        try:
+            os.makedirs("chat_sessions", exist_ok=True)
+            filename = f"chat_sessions/session_{session_id}.json"
+            data = {"session_id": session_id}
+            if os.path.exists(filename):
+                try:
+                    with open(filename, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {"session_id": session_id}
+            data["hubspot_contact_id"] = contact_id
+            data["updated_at"] = datetime.now().isoformat()
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            print(f"✅ HubSpot contact_id saved locally for session {session_id}")
+            return {"success": True}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot contact_id locally: {e}")
+            return {"success": False, "error": str(e)}
+
+    def update_hubspot_last_sync(self, session_id, iso_timestamp: str):
+        """Record last HubSpot sync time for a session"""
+        if not self.connected:
+            return self._update_hubspot_last_sync_locally(session_id, iso_timestamp)
+        try:
+            result = self.quotes_collection.update_one(
+                {"session_id": session_id},
+                {"$set": {"hubspot_last_sync_at": iso_timestamp, "updated_at": datetime.now()}},
+                upsert=True
+            )
+            if result.matched_count > 0 or result.upserted_id:
+                print(f"✅ HubSpot last sync time saved for session {session_id}")
+                return {"success": True}
+            return {"success": False, "error": "Update failed"}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot last sync time: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _update_hubspot_last_sync_locally(self, session_id, iso_timestamp: str):
+        try:
+            os.makedirs("chat_sessions", exist_ok=True)
+            filename = f"chat_sessions/session_{session_id}.json"
+            data = {"session_id": session_id}
+            if os.path.exists(filename):
+                try:
+                    with open(filename, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                except Exception:
+                    data = {"session_id": session_id}
+            data["hubspot_last_sync_at"] = iso_timestamp
+            data["updated_at"] = datetime.now().isoformat()
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            print(f"✅ HubSpot last sync time saved locally for session {session_id}")
+            return {"success": True}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot last sync time locally: {e}")
+            return {"success": False, "error": str(e)}
+
     def save_chat_session(self, session_id, email, messages, phone_number=None):
         """Save chat session to MongoDB quotes collection or local file as fallback"""
         if not self.connected:

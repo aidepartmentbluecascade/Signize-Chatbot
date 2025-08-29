@@ -10,6 +10,10 @@ import gspread
 from mongodb_operations import mongodb_manager
 import dropbox
 
+# RAG imports
+from chromadb_setup import initialize_chromadb
+from query_and_response import query_documents, generate_response
+
 # Load environment variables
 openai_key = load_environment()
 
@@ -44,6 +48,15 @@ except Exception as e:
 
 # Initialize OpenAI Client
 client = OpenAI(api_key=openai_key)
+
+# Initialize RAG system
+print("🚀 Initializing RAG system...")
+try:
+    chroma_collection = initialize_chromadb(openai_key)
+    print("✅ ChromaDB collection initialized")
+except Exception as e:
+    print(f"⚠️  Failed to initialize ChromaDB: {e}")
+    chroma_collection = None
 
 # Dropbox configuration
 from dropbox_auth import create_dropbox_client
@@ -221,7 +234,7 @@ def hubspot_patch_conversation(contact_id: str, conversation_text: str):
         print(f"❌ HubSpot PATCH failed: {e}")
         return {"success": False, "error": str(e)}
 
-def build_conversation_text(messages: list) -> str:
+def build_conversation_text(messages: list, session_id: str = None) -> str:
     import re
     
     lines = []
@@ -239,6 +252,70 @@ def build_conversation_text(messages: list) -> str:
         
         prefix = "User" if role == "user" else ("Assistant" if role == "assistant" else role)
         lines.append(f"{prefix}: {content}")
+    
+    # Add quote form data if available for this session
+    if session_id:
+        try:
+            quote_result = mongodb_manager.get_quote_data(session_id)
+            if quote_result.get("success") and quote_result.get("quote", {}).get("form_data"):
+                form_data = quote_result["quote"]["form_data"]
+                lines.append("\n--- QUOTE FORM DATA ---")
+                lines.append(f"Session ID: {session_id}")
+                
+                # Add key form fields
+                if form_data.get("sizeDimensions"):
+                    lines.append(f"Size: {form_data['sizeDimensions']}")
+                elif form_data.get("width") and form_data.get("height"):
+                    width_unit = form_data.get("widthUnit", "inches")
+                    height_unit = form_data.get("heightUnit", "inches")
+                    lines.append(f"Size: {form_data['width']} {width_unit} × {form_data['height']} {height_unit}")
+                
+                if form_data.get("materialPreference"):
+                    materials = form_data["materialPreference"]
+                    if isinstance(materials, list):
+                        materials = ", ".join(materials)
+                    lines.append(f"Material: {materials}")
+                
+                if form_data.get("illumination"):
+                    illumination = form_data["illumination"]
+                    if isinstance(illumination, list):
+                        illumination = ", ".join(illumination)
+                    lines.append(f"Illumination: {illumination}")
+                
+                if form_data.get("cityState"):
+                    lines.append(f"Location: {form_data['cityState']}")
+                
+                if form_data.get("budget"):
+                    budget = form_data["budget"]
+                    if isinstance(budget, list):
+                        budget = ", ".join(budget)
+                    lines.append(f"Budget: {budget}")
+                
+                if form_data.get("placement"):
+                    placement = form_data["placement"]
+                    if isinstance(placement, list):
+                        placement = ", ".join(placement)
+                    lines.append(f"Placement: {placement}")
+                
+                if form_data.get("deadline"):
+                    deadline = form_data["deadline"]
+                    if isinstance(deadline, list):
+                        deadline = ", ".join(deadline)
+                    lines.append(f"Deadline: {deadline}")
+                
+                if form_data.get("additionalNotes"):
+                    lines.append(f"Notes: {form_data['additionalNotes']}")
+                
+                # Add logo information
+                if form_data.get("uploadedLogos"):
+                    lines.append(f"Logos: {len(form_data['uploadedLogos'])} file(s) uploaded")
+                    for i, logo in enumerate(form_data["uploadedLogos"], 1):
+                        lines.append(f"  Logo {i}: {logo.get('filename', 'Unknown')}")
+                
+                lines.append("--- END QUOTE FORM DATA ---")
+        except Exception as e:
+            print(f"⚠️  Error adding quote form data to conversation: {e}")
+    
     return "\n".join(lines)
 
 # Flask application setup
@@ -272,6 +349,8 @@ FIRST MESSAGE HANDLING:
 
 Knowledge Base Use:
 When users ask about our products, services, or company information, use the knowledge base to provide accurate details about signs, mountings, materials, installation, etc.
+
+IMPORTANT: When knowledge base context is provided above, use that information as your primary source for answering questions. The knowledge base contains specific, up-to-date information about Sign-nize products, services, and processes. Always reference this information when available and relevant to the user's question.
 
 Conversation Guidelines:
 - Be warm, professional, and engaging—make the client feel valued.
@@ -460,22 +539,7 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
             print("⚠️  Google Sheets not available - skipping Google Sheets save")
             return False
    
-        conversation_text = ""
-        for i, message in enumerate(chat_history):
-            role = "User" if message["role"] == "user" else "Assistant"
-            conversation_text += f"{role}: {message['content']}\n"
-        
-    
-        logo_urls = []
-        if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
-            for logo in chat_sessions[session_id]["logos"]:
-                if "dropbox_url" in logo:
-                    logo_urls.append(logo["dropbox_url"])
- 
-        if logo_urls:
-            conversation_text += "\n\n--- LOGO FILES ---\n"
-            for i, url in enumerate(logo_urls, 1):
-                conversation_text += f"Logo {i}: {url}\n"
+        conversation_text = build_conversation_text(chat_history, session_id)
       
         session_data = {
             "session_id": session_id,
@@ -523,24 +587,26 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                     existing_count = int(row_data[3]) if len(row_data) > 3 and row_data[3].isdigit() else 0
                     new_messages = chat_history[existing_count:]
                     
-                    for msg in new_messages:
-                        role = msg.get("role", "unknown")
-                        content = msg.get("content", "")
-                        if role == "user":
-                            updated_conversation += f"\n👤 User: {content}"
-                        elif role == "assistant":
-                            updated_conversation += f"\n🤖 Assistant: {content}"
+                    # Build new conversation text with quote form data
+                    new_conversation_text = build_conversation_text(chat_history, session_id)
+                    
+                    # If there's existing conversation, append new messages
+                    if existing_conversation:
+                        updated_conversation = existing_conversation + "\n\n--- New Messages ---\n"
+                        # Extract only the new messages part
+                        new_messages_text = ""
+                        for msg in new_messages:
+                            role = msg.get("role", "unknown")
+                            content = msg.get("content", "")
+                            if role == "user":
+                                new_messages_text += f"\n👤 User: {content}"
+                            elif role == "assistant":
+                                new_messages_text += f"\n🤖 Assistant: {content}"
+                        updated_conversation += new_messages_text
+                    else:
+                        updated_conversation = new_conversation_text
          
-                    logo_urls = []
-                    if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
-                        for logo in chat_sessions[session_id]["logos"]:
-                            if "dropbox_url" in logo:
-                                logo_urls.append(logo["dropbox_url"])
-                
-                    if logo_urls and "--- LOGO FILES ---" not in updated_conversation:
-                        updated_conversation += "\n\n--- LOGO FILES ---\n"
-                        for i, url in enumerate(logo_urls, 1):
-                            updated_conversation += f"Logo {i}: {url}\n"
+                    # Logo information is now handled in build_conversation_text function
                     
                
                     updated_row = [
@@ -648,24 +714,18 @@ def chat():
     })
 
     try:
-        # Generate response using the Sign-nize system prompt with context
         response = generate_sign_nize_response(client, user_message, chat_sessions[session_id])
-        
-        # Check if response contains quote form trigger
         quote_form_triggered = "[QUOTE_FORM_TRIGGER]" in response
         if quote_form_triggered:
             response = response.replace("[QUOTE_FORM_TRIGGER]", "")
-        
-        # Add assistant response to session history
+
         chat_sessions[session_id]["messages"].append({
             "role": "assistant",
             "content": response
         })
         
-        # Continuously update Google Sheets with each message
         message_count = len(chat_sessions[session_id]["messages"])
         
-        # Save to Google Sheets if email is available (update existing or create new)
         if chat_sessions[session_id].get("email"):
             update_existing = session_id in saved_sessions
             print(f"📊 Updating Google Sheets for session {session_id}: {message_count} messages, update_existing={update_existing}")
@@ -678,7 +738,6 @@ def chat():
         else:
             print(f"⚠️  No email available for session {session_id}, skipping Google Sheets update")
         
-        # Save chat session to database
         try:
             db_result = mongodb_manager.save_chat_session(
                 session_id, 
@@ -694,19 +753,18 @@ def chat():
         
         print(f"Generated response for session {session_id}:", response)
 
-        # After generating and saving, optionally sync conversation to HubSpot if 1 hour elapsed
         try:
             contact_id = None
             if session_id in chat_sessions:
                 contact_id = chat_sessions[session_id].get("hubspot_contact_id")
             if not contact_id:
-                # Try reading from DB for this session
+              
                 db_session = mongodb_manager.get_chat_session(session_id)
                 if db_session.get("success"):
                     contact_id = db_session["session"].get("hubspot_contact_id")
 
             if contact_id:
-                # Determine last sync
+              
                 last_sync_iso = None
                 db_session = mongodb_manager.get_chat_session(session_id)
                 if db_session.get("success"):
@@ -716,13 +774,13 @@ def chat():
                 if last_sync_iso:
                     try:
                         last_sync_dt = datetime.fromisoformat(last_sync_iso.replace("Z", "+00:00"))
-                        # Sync if at least 30 seconds have passed since last sync
+                     
                         should_sync = (datetime.utcnow() - last_sync_dt).total_seconds() >= 30
                     except Exception:
                         should_sync = True
 
                 if should_sync:
-                    conv_text = build_conversation_text(chat_sessions[session_id]["messages"])
+                    conv_text = build_conversation_text(chat_sessions[session_id]["messages"], session_id)
                     patch_result = hubspot_patch_conversation(contact_id, conv_text)
                     if patch_result.get("success"):
                         mongodb_manager.update_hubspot_last_sync(session_id, datetime.utcnow().isoformat() + "Z")
@@ -742,12 +800,24 @@ def chat():
         return jsonify({"message": f"Sorry, I encountered an error. Please try again."}), 500
 
 def generate_sign_nize_response(client, user_message, session_data):
-    """Generate response using the Sign-nize customer support system prompt with context awareness"""
-    # Update system prompt with current date
+    """Generate response using the Sign-nize customer support system prompt with context awareness and RAG"""
+ 
     current_date = datetime.now().strftime('%B %d, %Y')
     system_prompt = SIGN_NIZE_SYSTEM_PROMPT.replace('{{date}}', current_date)
     
-    # Build full conversation context
+    knowledge_context = ""
+    if chroma_collection:
+        try:
+            print("🔍 Querying knowledge base for relevant information...")
+            relevant_chunks = query_documents(chroma_collection, [user_message], n_results=3)
+            if relevant_chunks and relevant_chunks[0]:
+                knowledge_context = "\n\nKNOWLEDGE BASE CONTEXT:\n" + "\n\n".join(relevant_chunks)
+                print(f"✅ Found {len(relevant_chunks)} relevant knowledge chunks")
+            else:
+                print("ℹ️  No relevant knowledge base information found")
+        except Exception as e:
+            print(f"⚠️  Error querying knowledge base: {e}")
+    
     conversation_context = ""
     if session_data["messages"]:
         conversation_context = "\n\nFULL CONVERSATION HISTORY:\n"
@@ -755,11 +825,9 @@ def generate_sign_nize_response(client, user_message, session_data):
             role = "User" if msg["role"] == "user" else "Assistant"
             conversation_context += f"{role}: {msg['content']}\n"
     
-    # Check if email has already been collected in this conversation
     email_already_collected = False
     email_value = None
-    
-    # First check session data
+   
     if session_data.get("email"):
         email_already_collected = True
         email_value = session_data.get("email")
@@ -767,7 +835,6 @@ def generate_sign_nize_response(client, user_message, session_data):
         email_already_collected = True
         email_value = session_data.get("customer_info", {}).get("email")
     
-    # Then check conversation history for email collection
     if not email_already_collected and session_data["messages"]:
         for msg in session_data["messages"]:
             if msg["role"] == "user" and "@" in msg["content"]:
@@ -777,11 +844,10 @@ def generate_sign_nize_response(client, user_message, session_data):
                 if email_match:
                     email_already_collected = True
                     email_value = email_match.group(0)
-                    # Also update session data for future reference
+                  
                     session_data["email"] = email_value
                     break
     
-    # Add email information to the system prompt
     email_context = ""
     if email_value:
         email_context = f"""
@@ -803,7 +869,6 @@ CURRENT SESSION EMAIL: NOT COLLECTED
     print(f"🔍 Email already collected: {email_already_collected}")
     print(f"📧 Email value: {email_value}")
     
-    # Add simplified context instructions
     context_instructions = f"""
     
 CONTEXT INSTRUCTIONS:
@@ -826,8 +891,8 @@ CONTEXT INSTRUCTIONS:
 17. CRITICAL: Only ask for email if this is a completely new session or if email was never collected.
 """
     
-    # Combine all context
-    full_prompt = system_prompt + email_context + context_instructions + conversation_context + f"\n\nCurrent User Message: {user_message}"
+ 
+    full_prompt = system_prompt + email_context + context_instructions + knowledge_context + conversation_context + f"\n\nCurrent User Message: {user_message}"
     
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -847,7 +912,6 @@ CONTEXT INSTRUCTIONS:
 
     return response.choices[0].message.content
 
-# Route to validate email
 @app.route("/validate-email", methods=["POST"])
 def validate_email_endpoint():
     print(">>> Email validation endpoint hit")
@@ -861,7 +925,7 @@ def validate_email_endpoint():
     is_valid = validate_email(email)
     
     if is_valid:
-        # Create/update contact in HubSpot when email is valid
+        
         print(f"📧 Valid email detected - creating/updating HubSpot contact: {email}")
         hubspot_result = create_hubspot_contact(email)
 
@@ -869,7 +933,7 @@ def validate_email_endpoint():
         if hubspot_result.get("success"):
             print(f"✅ HubSpot contact {hubspot_result['action']}: {email}")
             contact_id = hubspot_result.get("contact_id")
-            # Save contact_id to session and MongoDB if available
+         
             if session_id and contact_id:
                 if session_id not in chat_sessions:
                     chat_sessions[session_id] = {"messages": [], "context_history": [], "conversation_state": "initial", "customer_info": {}, "email": email}
@@ -892,7 +956,7 @@ def validate_email_endpoint():
             })
         else:
             print(f"⚠️  HubSpot contact creation failed: {hubspot_result.get('error', 'Unknown error')}")
-            # Still return valid email even if HubSpot fails
+       
             return jsonify({
                 "valid": True,
                 "message": "Valid email format (HubSpot sync failed)",
@@ -904,7 +968,6 @@ def validate_email_endpoint():
         "message": "Invalid email format"
     })
 
-# Route to save quote form data
 @app.route("/save-quote", methods=["POST"])
 def save_quote():
     print(">>> Save quote endpoint hit")
@@ -917,13 +980,10 @@ def save_quote():
         return jsonify({"error": "Session ID, email, and form data are required"}), 400
     
     try:
-        # Save to MongoDB
         result = mongodb_manager.save_quote_data(session_id, email, form_data)
-        
-        # Update Google Sheets with the latest session data (including logo URLs)
+       
         if result["success"] and session_id in chat_sessions:
             try:
-                # Force update Google Sheets with current session data
                 update_existing = session_id in saved_sessions
                 save_session_to_sheets(session_id, email, chat_sessions[session_id]["messages"], update_existing)
                 print(f"✅ Google Sheets updated with latest session data for {session_id}")
@@ -941,7 +1001,6 @@ def save_quote():
     except Exception as e:
         return jsonify({"error": f"Failed to save quote: {str(e)}"}), 500
 
-# Route to get quote data for a session
 @app.route("/get-quote/<session_id>", methods=["GET"])
 def get_quote(session_id):
     print(f">>> Get quote endpoint hit for session {session_id}")
@@ -951,12 +1010,11 @@ def get_quote(session_id):
         if result["success"]:
             return jsonify(result["quote"])
         else:
-            # Return empty data instead of 404 when no quote exists yet
+            
             return jsonify({"form_data": {}})
     except Exception as e:
         return jsonify({"error": f"Failed to get quote: {str(e)}"}), 500
 
-# Route to upload logo files
 @app.route("/upload-logo", methods=["POST"])
 def upload_logo():
     print(">>> Upload logo endpoint hit")
@@ -973,31 +1031,26 @@ def upload_logo():
         
         if not session_id:
             return jsonify({"success": False, "message": "Session ID required"}), 400
-        
-        # Validate file type
+   
         allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'pdf'}
         file_extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
         
         if file_extension not in allowed_extensions:
             return jsonify({"success": False, "message": f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"}), 400
         
-        # Upload directly to Dropbox without saving locally
         try:
             filename = f"logo_{int(time.time())}_{file.filename}"
             dropbox_path = f"/logos/{session_id}/{filename}"
             
-            # Create Dropbox client with proper authentication
             dbx = create_dropbox_client()
             if not dbx:
                 print("❌ Failed to create Dropbox client")
                 return jsonify({"success": False, "message": "Failed to connect to Dropbox"}), 500
             
-            # Upload file directly from memory
             file_content = file.read()
             dbx.files_upload(file_content, dropbox_path, mode=dropbox.files.WriteMode.overwrite)
             print(f"✅ Uploaded to Dropbox: {dropbox_path}")
             
-            # Create a shared link
             try:
                 link_metadata = dbx.sharing_create_shared_link_with_settings(dropbox_path)
             except dropbox.exceptions.ApiError as e:
@@ -1011,18 +1064,16 @@ def upload_logo():
                 else:
                     raise
             
-            # Modify link to make it direct-download
             dropbox_url = link_metadata.url.replace("?dl=0", "?dl=1")
             print(f"✅ Created shared link: {dropbox_url}")
-            
-            # Store logo info in session
+
             logo_info = {
                 "filename": filename,
                 "dropbox_url": dropbox_url,
                 "upload_time": datetime.now().isoformat()
             }
             
-            # Store in session
+          
             if session_id not in chat_sessions:
                 chat_sessions[session_id] = {"logos": []}
             elif "logos" not in chat_sessions[session_id]:
@@ -1049,13 +1100,12 @@ def upload_logo():
 
 
 
-# Route to get session messages
 @app.route("/session/<session_id>/messages", methods=["GET"])
 def get_session_messages(session_id):
     print(f">>> Get session messages endpoint hit for session {session_id}")
     
     try:
-        # First try to get from database
+        
         result = mongodb_manager.get_chat_session(session_id)
         
         if result["success"]:
@@ -1063,7 +1113,6 @@ def get_session_messages(session_id):
             messages = session_data.get("messages", [])
             email = session_data.get("email", "")
             
-            # Also update in-memory session for consistency
             if session_id not in chat_sessions:
                 chat_sessions[session_id] = {
                     "messages": messages,
@@ -1106,63 +1155,20 @@ def get_session_messages(session_id):
         print(f"❌ Error getting session messages: {str(e)}")
         return jsonify({"error": f"Failed to get session messages: {str(e)}"}), 500
 
-# Route to get logos for a session
 @app.route("/session/<session_id>/logos", methods=["GET"])
 def get_session_logos(session_id):
     print(f">>> Get logos endpoint hit for session {session_id}")
     
     try:
-        # Get logos from session data (which includes Dropbox URLs)
         if session_id in chat_sessions and "logos" in chat_sessions[session_id]:
             logos = chat_sessions[session_id]["logos"]
             return jsonify({"logos": logos})
         else:
-            # No local files - only Dropbox URLs are stored
+          
             return jsonify({"logos": []})
     except Exception as e:
         return jsonify({"error": f"Failed to get logos: {str(e)}"}), 500
 
-
-
-# Route to test HubSpot integration
-@app.route("/test-hubspot", methods=["GET"])
-def test_hubspot():
-    """Test HubSpot contact creation functionality"""
-    try:
-        from environment import get_hubspot_config
-        hubspot_config = get_hubspot_config()
-        
-        if not hubspot_config:
-            return jsonify({
-                "success": False,
-                "message": "HubSpot not configured - please set HUBSPOT_TOKEN in environment",
-                "status": "not_configured"
-            })
-        
-        # Test contact creation with sample data
-        test_email = f"test_{int(time.time())}@example.com"
-        test_phone = "+1234567890"
-        
-        print(f"🧪 Testing HubSpot contact creation: {test_email}")
-        hubspot_result = create_hubspot_contact(test_email, phone_number=test_phone)
-        
-        return jsonify({
-            "success": True,
-            "message": "HubSpot test successful",
-            "status": "connected",
-            "test_email": test_email,
-            "hubspot_result": hubspot_result
-        })
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "message": f"HubSpot test failed: {str(e)}",
-            "status": "error"
-        })
-
-# Run the Flask app
 if __name__ == "__main__":
-    print("Starting Sign-nize Customer Support System...")
-    # Use environment variables for production settings
     debug_mode = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
     app.run(host="0.0.0.0", port=5000, debug=debug_mode)

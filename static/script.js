@@ -345,6 +345,8 @@ async function uploadLogoFile(file) {
                 filename: file.name,
                 dropbox_url: data.dropbox_url
             });
+            // Update logoCount field
+            updateLogoCount();
         } else {
             updateLogoPreviewItem(logoId, 'error');
             console.error('Upload failed:', data.message);
@@ -408,7 +410,57 @@ function removeLogo(logoId) {
         if (uploadedLogos.length === 0) {
             logoPreviewContainer.style.display = 'none';
         }
+        
+        // Update logoCount field
+        updateLogoCount();
     }
+}
+
+function updateLogoCount() {
+    const logoCountField = quoteForm.elements['logoCount'];
+    if (logoCountField) {
+        logoCountField.value = uploadedLogos.length;
+    }
+}
+
+function handleCheckboxGroups(formData) {
+    console.log('🔘 Processing checkbox groups...');
+    
+    // Define checkbox group fields
+    const checkboxGroups = [
+        'materialPreference',
+        'illumination', 
+        'installationSurface',
+        'budget',
+        'placement',
+        'deadline'
+    ];
+    
+    checkboxGroups.forEach(groupName => {
+        if (formData[groupName]) {
+            console.log(`🔘 Processing checkbox group: ${groupName} =`, formData[groupName]);
+            
+            // Get all checkboxes with this name
+            const checkboxes = quoteForm.querySelectorAll(`input[name="${groupName}"]`);
+            
+            checkboxes.forEach(checkbox => {
+                const savedValue = formData[groupName];
+                
+                if (Array.isArray(savedValue)) {
+                    // If it's an array, check if this checkbox's value is in the array
+                    checkbox.checked = savedValue.includes(checkbox.value);
+                    console.log(`   ${checkbox.value}: ${checkbox.checked} (in array)`);
+                } else if (typeof savedValue === 'string') {
+                    // If it's a string, check if it matches this checkbox's value
+                    checkbox.checked = savedValue === checkbox.value;
+                    console.log(`   ${checkbox.value}: ${checkbox.checked} (string match)`);
+                } else {
+                    checkbox.checked = false;
+                    console.log(`   ${checkbox.value}: false (default)`);
+                }
+            });
+        }
+    });
 }
 
 
@@ -543,7 +595,9 @@ function closeQuoteForm() {
     uploadedLogos = [];
     logoPreviewList.innerHTML = '';
     logoPreviewContainer.style.display = 'none';
-   
+    resetUnitButtons();
+    // Reset logoCount field
+    updateLogoCount();
 }
 
 function closeQuoteSummary() {
@@ -580,6 +634,8 @@ function startFreshQuote() {
     uploadedLogos = [];
     logoPreviewList.innerHTML = '';
     logoPreviewContainer.style.display = 'none';
+    // Reset logoCount field
+    updateLogoCount();
 }
 
 async function handleQuoteSubmit() {
@@ -610,9 +666,18 @@ async function handleQuoteSubmit() {
     const formData = new FormData(quoteForm);
     const quoteData = {};
     
- 
+    // Collect form data with proper handling of checkbox groups
     for (let [key, value] of formData.entries()) {
-        quoteData[key] = value;
+        if (quoteData[key]) {
+            // If this field already exists, convert to array
+            if (Array.isArray(quoteData[key])) {
+                quoteData[key].push(value);
+            } else {
+                quoteData[key] = [quoteData[key], value];
+            }
+        } else {
+            quoteData[key] = value;
+        }
     }
     
     const widthUnit = widthInput.dataset.unit || 'inches';
@@ -633,6 +698,12 @@ async function handleQuoteSubmit() {
     
     quoteData.uploadedLogos = uploadedLogos;
     quoteData.logoCount = uploadedLogos.length;
+    
+    // Update the hidden logoCount field
+    const logoCountField = quoteForm.elements['logoCount'];
+    if (logoCountField) {
+        logoCountField.value = uploadedLogos.length;
+    }
   
     try {
         const response = await fetch('/save-quote', {
@@ -777,7 +848,40 @@ async function loadExistingQuoteData() {
                     }
                     
                     if (element) {
-                        element.value = data.form_data[key];
+                        // Skip file inputs - they cannot be programmatically set
+                        if (element.type === 'file') {
+                            console.log(`⏭️  Skipping file input field ${key}`);
+                            return;
+                        }
+                        
+                        // Handle different input types
+                        if (element.type === 'checkbox') {
+                            // For checkboxes, handle different data formats
+                            const savedValue = data.form_data[key];
+                            console.log(`🔘 Processing checkbox ${key}:`, savedValue);
+                            
+                            if (Array.isArray(savedValue)) {
+                                // If it's an array, check if this checkbox's value is in the array
+                                element.checked = savedValue.includes(element.value);
+                                console.log(`   Array format: ${element.value} in [${savedValue.join(', ')}] = ${element.checked}`);
+                            } else if (typeof savedValue === 'string') {
+                                // If it's a string, check if it matches this checkbox's value
+                                element.checked = savedValue === element.value;
+                                console.log(`   String format: "${savedValue}" === "${element.value}" = ${element.checked}`);
+                            } else if (savedValue === true || savedValue === false) {
+                                // If it's a boolean, use it directly
+                                element.checked = savedValue;
+                                console.log(`   Boolean format: ${savedValue}`);
+                            } else {
+                                // Default to unchecked
+                                element.checked = false;
+                                console.log(`   Default: unchecked`);
+                            }
+                        } else {
+                            // For other inputs, set the value
+                            element.value = data.form_data[key];
+                        }
+                        
                         console.log(`✅ Filled field ${key} with value: "${data.form_data[key]}"`);
                         filledCount++;
                     } else {
@@ -800,6 +904,9 @@ async function loadExistingQuoteData() {
                 }
                 
                 console.log('✅ Form successfully loaded with existing data');
+                
+                // Handle checkbox groups that might need special processing
+                handleCheckboxGroups(data.form_data);
             } else {
                 console.log('⚠️  No form_data found or form_data is empty');
                 console.log('Data structure:', data);

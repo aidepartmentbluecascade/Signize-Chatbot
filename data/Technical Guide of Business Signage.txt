@@ -1,0 +1,212 @@
+Technical Guide of Business Signage
+Signage Categories
+3D Signs
+3D Signs refers to signs that have depth and dimensionality, typically created by constructing individual letters, logos, or elements with raised profiles. Unlike flat or printed signs, 3D signs physically project from their mounting surface, creating visual depth and shadow effects that enhance visibility, especially from different angles or under various lighting conditions. These signs can be fabricated They are typically fabricated using materials such as aluminum, stainless steel, acrylic, wood, or a combination of these. Depending on the design, 3D signs can be illuminated (front-lit, backlit, or side-lit) or non-illuminated.
+Channel letters are three-dimensional letters that are built like hollow boxes. Each letter has a front, side walls (called returns), and often a back, creating an internal space known as a “channel.” That’s where the name comes from. In illuminated signs, this channel is used to hold lighting components like LEDs. But even if there's no lighting involved, the construction style stays the same — the letters are still formed with depth and structure, giving them a bold, professional look.
+Types of Signs are 3D Metal Signs (available in non-lit and back-lit channel letters), 3D Acrylic Signs (with front-lit, back-lit, side-lit, and non-lit options), 3D Wood Signs, 3D Metal on Acrylic Signs, Flat Cut 2D Signs, Cabinet Signs such as Push-Thru and LightBox styles, vibrant UV Printed Acrylic Signs, and high-visibility Blade Signs / 2D Blade Signs
+
+3D Metal Signs 
+Non-lit / Non-Illuminated Channel Letters: These are dimensional letters or logos made from metal, without any internal lighting. They offer a clean, bold appearance and are ideal for creating a strong visual presence. Suitable for both indoor and outdoor applications, they are commonly used for branding, reception areas, building facades, and directional signage.
+Back-lit / Halo lit / Reverse-lit Channel Letters: These are metal letters or logos integrated with internal lighting, delivering a luminous glow that enhances visibility, especially in low-light or nighttime settings. Ideal for storefronts, building facades, and any signage requiring high impact and visibility after dark.
+3D Acrylic Signs 
+Front-lit / Face-lit Channel Letters: Acrylic letters or logos with internal lighting that shines through the front face, which is made of translucent acrylic, offering bright, even illumination. This style ensures excellent visibility and sharp definition, making it highly effective in low-light conditions. Commonly used for storefronts, retail spaces, and commercial signage where clear readability is essential.
+Back-lit / Halo-lit / Reverse-lit Channel Letters: These feature acrylic faces illuminated from within, with light directed toward the mounting surface to create a soft halo or backlighting effect. This enhances both visibility and aesthetic appeal, offering a sophisticated, modern look. Ideal for branding applications where subtle illumination and visual depth are desired.
+Both Front-lit & Back-lit / Both Face-lit & Halo-lit Channel Letters: These signs feature dual lighting—illuminating both the front and back—to create striking visual depth and layered brightness. The front face provides clear visibility, while the backlight produces a soft halo effect, both sides are made of translucent acrylic. They can use a single light color or a combination of two different shades for added visual impact. Ideal for premium branding in both indoor and outdoor environments.
+Side-lit / Edge-lit Channel Letters: These signs emit light from the edges or sides of the letters, creating a distinctive glow that outlines the shape and adds a sleek, modern effect. Side-lit acrylic letters are often used to complement other lighting styles or achieve a unique visual identity, particularly in contemporary branding.
+Non-lit / Non-Illuminated Channel Letters: These acrylic letters or logos do not feature internal lighting, offering a more subtle 3D effect. They provide a clean, professional look, making them ideal for applications where natural lighting or ambient light is sufficient. Suitable for both indoor and outdoor use, they offer an understated yet bold visual presence.
+3D Wood Signs                     
+These letters or logos are crafted from MDF, or plywood, offering a rustic or vintage aesthetic ideal for branding that seeks a more organic, timeless feel. They can be either non-lit for a natural, understated look or illuminated to enhance visibility and visual appeal. Perfect for creating a warm, inviting atmosphere in both indoor and outdoor settings.
+3D Metal on Acrylic Signs
+These acrylic letters or logos feature a metallic overlay, such as brushed, mirror, or painted aluminum, achieving a high-end, reflective look. They are non-illuminated, offering a sophisticated appearance without lighting. Typically mounted using VHB (Very High Bond) tapes, these signs ensure strong adhesion without the need for visible fasteners, maintaining a sleek and seamless design.
+Mounting Methods:
+Stud Mounting: Stud mounting involves letters fixed with spacers (standoffs) using threaded rods, creating a floating effect.
+Flush Mounting: Direct attachment to the surface, with no visible gap or protrusion.
+Note:
+Signs can be pre-mounted onto aluminum or stainless steel raceways or reinforced backer panels made from aluminum, PVC, acrylic, and wood. This method ensures easy wall mounting, offering a streamlined and unified installation that maintains a clean, professional appearance.
+Material Options:
+Letters: Acrylic (PMMA), aluminum, stainless steel, wood (for wooden signs)
+Backer Panel: Aluminum, PVC, acrylic, stainless steel, wood
+Raceway: Aluminum, stainless steel
+
+2D Signs / Flat Cut Signs
+2D signs are flat, non-illuminated signs that offer a sleek, professional appearance. These signs are commonly used in both indoor and outdoor applications, including office branding, directional signage, and retail displays. They can be fabricated from a variety of materials such as acrylic, aluminum, PVC, or wood. Ideal for clear messaging, 2D signs provide simplicity and impact while maintaining a clean and modern look.
+Mounting Methods:
+Surface Mounting: Direct attachment to the surface using studs / screws or using VHB tape.
+Standoff Mounting: Elevated installation using spacers for added depth and dimension.
+Note:
+Like 3D signs, 2D signs can be pre-mounted on raceways or reinforced backer panels, allowing for easy and secure wall mounting with or without studs.
+Material Options:
+Sign Face: Acrylic, aluminum, PVC, stainless steel
+Backer Panel: Aluminum, acrylic, PVC, wood
+Cabinet Signs 
+Cabinet signs are enclosed, box-like structures designed to display graphics or lettering on a flat face, typically made from acrylic, polycarbonate, or aluminum. These signs can be illuminated or non-illuminated depending on the customer's preference. Known for their durability and weather resistance, cabinet signs are often mounted on walls, poles, or monuments, making them a versatile choice for both indoor and outdoor branding.
+Push Thru Cabinet Sign: Push-thru cabinet signs feature raised acrylic letters or metal-pasted acrylic letters that are inserted through the sign’s face, creating a distinctive 3D effect. These signs can be illuminated or non-illuminated based on the customer's preference. Illuminated versions provide a bright, glowing effect, highlighting the letters for enhanced visibility, while non-lit versions offer a more subtle, elegant look.
+LightBox Sign: Lightbox signs are illuminated, enclosed signs with a translucent face that displays graphics, logos, or text. Made primarily from aluminum and acrylic, these signs can be single-sided or double-sided, providing high visibility both day and night. Equipped with internal LED lighting, they illuminate the graphics for clear and striking displays, making them ideal for outdoor applications such as storefronts and roadside signage.
+Mounting Methods:
+Flush Mounting: Direct attachment to walls or ceilings for a seamless, streamlined appearance.
+Standoff Mounting: Floating installation with spacers for a modern, dimensional look.
+Suspended Mounting: Hung from ceilings using cables or chains for prominent visibility.
+Mounting via Hanging Rods: These signs can be securely installed by bolting through welded side-mounted hanging rods, allowing for stable, lateral suspension from posts or wall brackets.
+Material Options:
+Frame: Aluminum, stainless steel
+Face: Acrylic with vinyl graphics or UV prints, Aluminum, stainless steel
+Internal Lighting: LED modules or strips
+UV Printed Acrylic Signs
+UV printed acrylic signs feature vibrant, high-resolution printing combined with optional LED neon lighting for a dynamic, eye-catching effect. These signs can be produced as illuminated (with LED neon) or non-illuminated based on customer preferences. A 2mm or 0.08in to 3mm or 0.12in acrylic layer can be added to the front side of letters or logos, enhancing depth and providing a premium, three-dimensional appearance. Ideal for brands seeking colorful, modern, and highly customizable signage solutions, UV printed acrylic signs offer a distinctive and visually appealing option for any business.
+Mounting Methods:
+Wall Mounting: Direct installation using standoffs, screw caps, or pre-drilled holes.
+Suspended Mounting: Hung from ceilings using cables or chains for prominent visibility.
+Material Options:
+Sign Face: Clear or colored acrylic (PMMA), UV-printed with custom graphics
+Lighting Elements: LED neon flex (silicone or PVC casing)
+Blade Signs / 2D Blade Signs / 2D Blade Signs / 2D Blade Signs
+Blade Signs / 2D Blade Signs / 2D Blade Signs / 2D Blade Signs are mounted perpendicular to a wall, allowing visibility from both directions. They are particularly effective for storefronts and high-traffic areas, making them ideal for locations along sidewalks or streets. Designed to enhance visibility from multiple angles, Blade Signs / 2D Blade Signs are especially effective in pedestrian-heavy areas and retail environments, ensuring that businesses capture attention from all directions.
+Mounting Methods:
+Wall Projection: Perpendicular installation using durable brackets (aluminum or stainless steel).
+Ceiling Suspension: Suspended from overhead structures using rigid arms or cables.
+Material Options:
+Sign Face: Aluminum, stainless steel
+Mounting Hardware: Stainless steel
+Construction Terms
+Returns: The side walls of channel letters are typically made from aluminum, stainless steel, or acrylic, depending on the type of sign. These walls provide the three-dimensional shape of the letters and play a crucial role in housing the internal components, especially for illuminated signs.
+Face: The front part of a letter is the visible surface, typically made from materials such as acrylic, aluminum, or stainless steel. These materials provide durability, clarity, and a premium finish, making them ideal for both illuminated and non-illuminated signage applications.
+Back: The backside of a letter or sign refers to the rear surface, which can be either solid or open based on the design. For front-lit or non-illuminated signs, the backside is typically made of aluminum, providing a durable structure. For backlit signs, acrylic is used to allow for proper light diffusion. Non-illuminated signs generally do not require additional backing support.
+Trim Cap / Retainer: The border that secures the acrylic face to the return is typically made from materials like aluminum or stainless steel. This border ensures a tight, secure fit between the front face and the side walls, maintaining the structural integrity of the letter and allowing for effective housing of any internal components, particularly in illuminated signs.
+Raceway: A metal box serves as the housing for wiring and acts as a secure mounting base for signage. It provides protection for electrical components and ensures the proper installation and stability of the sign, typically made from aluminum or stainless steel for durability and corrosion resistance.
+Backer Panel: A support panel placed behind the letters provides additional stability and can enhance the overall aesthetic of the sign. Often made from materials like aluminum, acrylic, or PVC, it helps to secure the letters in place while contributing to the sign's visual appeal and structural integrity.
+Serviceable: Signage systems designed for accessibility facilitate easy maintenance, repair, or replacement of internal components like LED modules, and wiring. These systems are built with user-friendly features that allow quick access to key parts, ensuring minimal downtime and prolonged durability.
+Indoor / Outdoor: Indoor signs are primarily used for branding and navigation within enclosed spaces. They do not require weather protection or drain holes, as they are not exposed to the elements. Outdoor signs are specifically designed to endure various weather conditions. They are made from durable materials and must include drain holes to prevent water damage, ensuring long-term performance and resilience.
+Materials
+Transparent Acrylic                                         Frosted Acrylic                                               Colored Acrylic
+Acrylic (PMMA): Acrylic sheets, available in transparent, frosted, or colored finishes, are widely used for sign faces, backs, and sides. In our standard local production.
+3D Front-lit Signs & Lightboxes: 5mm or 0.20 in acrylic is used for the face, back, and/or both if required.
+3D Backlit Signs: 8mm or 0.32in transparent or frosted acrylic is used on the reverse side.
+UV Acrylic Signs: 5mm or 0.20in acrylic is used for sizes up to 28 inches; 8mm or 0.32in is used for larger sizes.
+Metal on Acrylic Signs: 8mm or 0.32in transparent or frosted acrylic is used for the back of the sign, typically paired with metal elements on the front for a sleek and durable finish 
+Acrylic Backer Panels: Constructed using 8mm or 0.32 in acrylic.
+Aluminum: Aluminum is a lightweight, durable, and corrosion-resistant metal commonly used in signage for structural support, letter fabrication, and back panels. Its strength and weather resistance make it ideal for both indoor and outdoor applications. In our local production:
+Backlit and Non-lit Signs: 10-gauge aluminum is used for the face, and 14-gauge aluminum is used for the returns.
+Front-lit Signs: 14-gauge aluminum is used for the back and returns, as the front is made of acrylic to allow light transmission.
+Aluminum Back Panels (Raceways and Backboards): They are made entirely from 10-gauge aluminum.
+Lightboxes: They are constructed with either 10-gauge or 14-gauge aluminum, depending on the size and complexity.
+Blade Signs / 2D Blade Signs: They are fabricated using 10-gauge or 12-gauge aluminum, depending on the size and design.
+PVC: PVC (Polyvinyl Chloride) is a lightweight, versatile plastic often used in signage for backing panels, lettering, and internal support. It is cost-effective, easy to cut, and suitable for both indoor and short-term outdoor use. Matte or slightly textured; can be white or colored. It is not generally used in our local production.
+Stainless Steel: Stainless steel is a strong, corrosion-resistant material commonly used in premium signage for letters, logos, and back panels. Its durability and resistance to environmental elements make it suitable for both indoor and outdoor use.
+In our local production:
+Base (Face) Material: 14 or 16 gauge stainless steel
+Returns: 26 gauge stainless steel
+This applies to painted, brushed, and mirror-finished signs.
+Electrical Components
+LED Modules / Strips: LED Modules and LED Strips are used for internal illumination in signs, providing bright, energy-efficient lighting. In our local production, we operate on a 12V system in our local production.
+Power Supply / Driver / Transformer: Converts standard AC voltage (110/220V) to low-voltage DC (12V or 24V), required for powering LED modules or strips. Standard electrical polarity (+ / -); black typically denotes negative. Wattage indicates the power consumption of the lighting system, typically measured in watts (W). It helps determine energy requirements, power supply sizing, and overall efficiency. Ampere refers to the electrical current drawn by the lighting system. It is essential for selecting the correct wire gauge and power supply, ensuring safe and efficient operation.
+Dimmer: An electrical device that adjusts the brightness of LED lights in signage, offering flexibility and energy efficiency. It works with both wired metal signs and plug-and-play neon signs.
+RGB Controller: An RGB LED controller is a device that manages the color, brightness, and visual effects of RGB LED lighting. It is commonly operated using a remote control or mobile app, allowing for customizable and dynamic light displays. The system is based on four primary colors—Red, Green, Blue, and White. All other color options and lighting modes available on the remote are combinations derived from these four base colors.
+
+
+
+Wire Gauge: The American Wire Gauge (AWG) system determines wire thickness. Lower AWG numbers indicate thicker wires with higher current capacity. Our standard is 18 AWG for general connections.
+Barrel Jack Connector           Screw Terminal Connector            Twist Splice Connector                 Soldered Connections
+Wire Connectors: These components join two or more electrical wires together, ensuring a secure, insulated, and reliable connection. In signage, they are essential for assembling and maintaining electrical systems such as LED modules, power supplies, and controllers. The following are some connectors that we use in our local production:
+Barrel Jacks: Commonly used for plug-and-play connections, especially in smaller signs or those with adapters.
+Screw Terminals: Allow for firm, adjustable wire connections, often used in power supplies and controllers.
+Twist Splice Connectors: Quick and easy for joining wires with or without soldering them.
+Soldered Connections: Provide the most durable and permanent bond, ideal for high-vibration or outdoor environments. It can then be covered with plastic sleeves.
+Packaging Terms
+Thermopore / EPS Foam Layering: A lightweight foam material used for impact absorption and cushioning during transportation. In our local production, we typically use 1-inch thick thermopore to protect signs from damage during shipping and handling.
+Bubble Wrap: Flexible plastic material with air-filled bubbles used to cushion and protect sign surfaces during transit. In our local production, we typically apply multiple layers of bubble wrap—especially around delicate or high-finish areas—to prevent scratches, dents, or surface damage.
+Cushioning: A soft, durable, and lightweight foam material used for cushioning and protecting sensitive parts of signs during packaging. In our local production, we typically use 8mm or 0.32in thick Jumbolon or EVA foam to line the interior of boxes, especially around edges, corners, and delicate components, minimizing the risk of impact damage during transport.
+Branding: It is the strategic process of creating a unique identity for a business or product through elements such as design, messaging, tone, and positioning. Effective branding enhances recognition, builds trust, and fosters loyalty among target audiences by conveying consistent values and visual identity across all touchpoints.
+Accessories: These are additional components that support the installation, operation, and visual impact of signage. These include mounting hardware, power supplies, wiring, and other functional elements. They ensure the sign is securely installed, safely powered, and maintains its intended appearance and performance.
+Finishes & Coatings
+Powder Coating: Powder coating is a durable, weather-resistant finish applied to metal surfaces. It involves applying a dry powder that is cured under heat, creating a tough protective layer that resists scratching, chipping, and corrosion. It's ideal for both indoor and outdoor use. Currently, we offer black and white colors in our local production.
+Brushed and Mirror Finishes: Brushed and mirror finishes are popular surface treatments for metal with distinct looks. A brushed finish creates a matte, textured surface with fine lines, giving it a satin appearance that hides fingerprints and scratches. A mirror finish, achieved by polishing the metal to a high gloss, provides a sleek, reflective surface, often used for decorative purposes. In our local production, silver and gold are the most common colors for both finishes.
+Vinyl Wrap: Vinyl wrap is a versatile and cost-effective signage solution. It involves applying an adhesive film on the signage. The wrap is available in solid colors or custom printed designs, offering flexibility to match branding needs. To enhance durability, the vinyl wrap is typically protected by a transparent, thin film layer, which helps guard against UV damage, scratches, and general wear. This makes vinyl wrap an ideal option for both short-term promotions and long-term branding applications.
+UV Printing: UV printing utilizes ultraviolet (UV) light to cure inks as they are printed onto the surface of signage materials. This method results in vibrant, high-quality prints with excellent color accuracy and durability. UV printing is ideal for creating detailed, full-color designs on a wide range of materials, including acrylic, metal, and wood. The cured inks are resistant to fading, scratching, and environmental wear, making UV printing a popular choice for both indoor and outdoor signage that needs to maintain its appearance over time.
+
+
+Matte Finish                                                        Gloss Finish                                                Satin Finish
+Painted Finishes: Painted finishes are applied to signage surfaces using durable spray coatings, providing a variety of aesthetic choices to meet different branding requirements. These finishes come in three main types:
+Matte Finish: Offers a smooth, non-reflective surface with a modern, understated appearance, perfect for a sophisticated and professional look.
+Gloss Finish: Creates a shiny, vibrant surface that boosts color vibrancy, making it ideal for signage that needs to attract attention.
+Satin Finish: Combines a subtle sheen with a refined look, offering a balance between the matte and gloss finishes with a slight reflective quality.
+These finishes not only enhance the visual appeal of the signage but also contribute to its durability, ensuring protection from the elements for both indoor and outdoor applications.
+In our local production, we use top-quality paints to ensure long-lasting, professional results. We follow our customer's specific requirements for color shades, finishes, and areas, with some signs requiring multiple colors. To ensure precision, we primarily use Pantone colors and Sherwin Williams color codes, guaranteeing consistency and accuracy in color matching. This approach allows for the exact reproduction of brand colors and enhances the overall aesthetic of the signage.
+Design & Layout Considerations
+Font Style & Stroke Width: Font style refers to the design and appearance of the text, such as bold, italic, serif, or sans-serif, affecting the sign’s character and branding. Stroke width is the thickness of the lines forming each letter; it impacts the visibility, durability, and readability of the sign, especially from a distance.
+Kerning & Spacing: The adjustment of space between individual letters in a word to improve visual balance, readability, and overall appearance of the text, especially important in signage for clear and professional presentation.
+Mockup: A visual representation of a sign or design concept used to demonstrate how the final product will look in its intended environment
+CDR: A vector file format created using CorelDRAW, widely used in signage for precise, scalable designs suitable for printing, cutting, and fabrication.
+Length of Curve: The total distance from start to end, including all segments and bends. It’s used to determine the length of LED strips or modules needed for a sign and helps us to decide the relevant power box for the signage.
+Compliance & Safety
+UL Certification: A safety certification issued by Underwriters Laboratories, indicating that signage components (like LEDs, power supplies, and wiring) meet established safety standards for electrical performance and fire resistance. This certification is important because many cities and building inspectors require it before approving a sign for installation, especially for lit signs. A UL-certified sign is safer, more reliable, and more likely to pass inspection without delays. You can usually spot this by a UL sticker or label somewhere on the sign or its components. It’s a mark of quality and compliance, and it gives both the customer and the installer peace of mind
+IP Rating (Ingress Protection Rating): The IP Rating is an internationally recognized standard that defines the level of protection a product has against the ingress (entry) of solid objects like dust and liquids like water. It consists of two numbers: the first digit indicates protection against solids (e.g., dust or debris), and the second digit indicates protection against moisture or water. For example, a rating of IP65 means the product is completely dust-tight (6) and protected against low-pressure water jets from any direction (5). Higher numbers represent higher levels of protection. This rating is especially important for outdoor signage or signs installed in wet, dusty, or harsh environments, ensuring that components like LEDs or power supplies remain functional and safe under specific environmental conditions.
+Grounding & Short Circuit Protection: Electrical safety measures that prevent electric shock and equipment damage by directing excess current safely into the ground and protecting circuits from overloads or faults.
+Local Signage Codes: Rules set by local authorities to govern the size, placement, lighting, and installation of signs. They ensure safety, aesthetic consistency, and zoning compliance. For example, codes may limit sign height, restrict flashing lights near homes, require specific materials in historic areas, control distance from building edges, and prefer Blade Signs / 2D Blade Signs over pole signs in downtown zones.
+Additional Installation Terms
+Leveler: A tool used to ensure a sign is mounted perfectly level, either horizontally or vertically, ensuring proper alignment and visual appeal.
+Installation Drawing: A detailed schematic or blueprint showing dimensions, placement, and assembly instructions, guiding installers for precise setup.
+Studs: Threaded metal rods inserted into signs and mounting surfaces, often paired with spacers to create a floating effect. Their length may vary based on the customer's requirements. Mostly 4mm or 0.16in and 6mm or 0.24in studs are used in our local production. 
+Anchors: Devices that secure studs, screws, or bolts into walls, especially in hollow or soft surfaces, ensure firm and stable installations. The size is determined by the size of the bushings used in the signage.
+Bolts: Threaded fasteners used to attach sign components securely to mounting surfaces, typically used with nuts and washers. It is typically used in the installation of raceways or serviceable signage where bushings are not used. Mostly 8mm or 0.32in of bolts are used in our local production.                                              
+Rawl Bolts: A rawl bolt, also known as a wedge anchor, is a heavy-duty fastener designed to secure fixtures to solid surfaces such as concrete or masonry. It features a cone-shaped expansion mechanism that, when tightened, forces the anchor sleeve to expand and lock firmly within the drilled hole, ensuring a strong and reliable hold. In our production, rawl bolts are primarily used for mounting Blade Signs / 2D Blade Signs and raceways, serving as an effective alternative to bushings and studs. We typically use 6mm or 0.24in and 8mm or 0.32in diameter rawl bolts, depending on the size and weight of the signage.
+Bushing: These components are installed on the back of the letters, providing a secure grip for the studs. Together, the studs and bushings support the weight of the signage. We typically use 4mm or 0.16in or 6mm or 0.24in bushings - or a combination of both - depending on the design and weight of the sign.
+Drill Machine: A powered tool used to create holes in mounting surfaces for inserting fasteners like bolts, studs, or anchors.
+Drill Bit: A tool used with a drill machine to create holes in materials. Use a 6mm or 0.24in drill bit for 4mm or 0.16in studs/screws and an 8mm or 0.32in drill bit for 6mm or 0.24in studs/screws.
+Wire Length: The measured length of wire required to connect the sign to its power source, adjustable upon customer request. We generally use 3ft to 5ft per letter in our local production.
+Plug Type: The specific design of the electrical plug (e.g., Type A, B, C) that connects the sign’s power supply to the electrical outlet, which varies by country, region, and voltage standards.
+Standoffs / Spacers / Pegs: Hardware components that create a gap between the sign and the mounting surface, enhancing aesthetics, improving ventilation, and stability, made from materials like plastic, rubber, or metal.
+Common Issues
+Sign Does Not Illuminate or Flickers During Operation
+The lighting within the sign blinks or flickers intermittently, potentially due to unstable power input, loose wiring, or a faulty LED driver.
+The signage does not illuminate when connected to the power source. This may indicate an issue with the power supply, wiring, or internal components.
+Step 1: Check the Power Supply
+Before connecting to your signage, verify proper voltage output using one of the following methods:
+Option	Step	Details
+1. Multimeter Test	1. Set the multimeter to DC voltage (20V)	
+	2. Connect probes	Red probe → DC (+) and Black probe → DC (–)
+	3. Expected reading	12V ± 0.5V
+2. Voltage Tester	1. Hold the tester near the DC output wires	
+	2. Indicators	Light or beep → Power detected. 
+If No signal → Recheck input power or wiring
+3. Channel Letter Test (Direct)	1. Isolate one channel letter	
+	2. Connect temporarily	One wire to DC (+) and One wire to DC (–)
+	3. If light turns ON	Power supply is working
+	4. If light does not turn ON	Reverse polarity by reconnecting the wires in an alternate sequence
+Step 2: Identifying Wiring Colors
+DC Output Wires:
+White, Red or Any Other Colored Wire = Positive (+)
+Black = Negative (–)
+⚠ If the letter does not light up, reverse the DC wires and test again.
+Step 3: Connecting Letters to Power Supply
+⚡ Use Both Output Channels to Balance Load
+Example Split:
+Letters 1–4 → Output 1
+Letters 5–8 → Output 2
+Wiring Instructions:
+Bundle all positive wires from each group → Connect to White, Red or any other color (+) output wire.
+Bundle all negative wires from each group → Connect to Black (–) output wire.
+Ensure all connections are:
+Securely tightened
+Properly insulated
+Turn on AC power and confirm all letters illuminate.
+Electrical Connection Diagram
+Below are some examples of electrical connection diagrams, including wire connections and load management. Depending on the signage, the setup may use one or two junctions, varying configurations accordingly.
+If the power supply includes two output junctions, both may be utilized; however, if the sign operates reliably with a single junction, using one is sufficient. To ensure proper understanding of power distribution and load management, it is strongly recommended to provide the relevant electrical schematic for the specific sign. If this drawing is not readily available, the production team should be requested to prepare and supply one.
+Safety Information
+Use 18 AWG wire (or thicker) for main connections.
+Use waterproof connectors or heat-shrink tubing.
+All wiring must be insulated, dry, and protected.
+Always disconnect power before servicing.
+Turn off power during installation to prevent shock.
+10.2) Irregular or Uneven Wall Surface
+If the wall surface is not flat or has visible bumps, indentations, or texture variations, it may affect the proper mounting or alignment of the sign. In such cases, spacers or standoffs should be used to level the sign and ensure even installation. These components help compensate for wall irregularities and maintain both structural integrity and visual alignment.
+In the case of convex or concave wall surfaces, it is essential to take precise measurements to determine the appropriate size of the standoffs. These standoffs will play a critical role in achieving proper alignment and stability during the installation, compensating for the wall’s curvature and ensuring a secure, professional finish.
+10.3) Wall Material-Based Installation Considerations
+For delicate surfaces such as glass, tile, or decorative wall panels, it is recommended to use high-strength double-sided 3M adhesive tape (for non-lit signs), or standoff-mounted acrylic backer panels where possible. In such cases, the letters are pre-installed on the acrylic backer, and standard spacers—like those used for neon acrylic signs—are applied to mount the panel without damaging the surface.
+For all other standard wall types, use appropriate mounting hardware—such as studs, bolts, nuts, rawl bolts, or double-sided 3M tape (where applicable)—based on the sign’s weight, structure, and mounting method.
+10.5) Cracks on Back Acrylic of the Sign
+Structural damage observed on the rear acrylic component of the sign, often due to handling, shipping, or improper installation pressure.
+10.6) Color Shade Discrepancy in Photographs
+Perceived mismatch in color tones between reference images and the actual sign, often influenced by lighting conditions, camera settings, or material reflectivity.
+10.7) Cracks on the Front Face of Letters
+Visible damage or fractures on the letter faces, typically resulting from impact, transit damage, or production defects.

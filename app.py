@@ -22,7 +22,7 @@ from dropbox_auth import create_dropbox_client
 # Packages
 from chatbot.chatbot import generate_sign_nize_response
 from validations.validations import validate_email
-from session_manager.session_manager import save_session_to_sheets
+from session_manager.session_manager import save_session_to_sheets, set_saved_sessions, get_saved_sessions
 from chatbot.chatbot import build_conversation_text
 from hubspot.hubspot import create_hubspot_contact, hubspot_patch_conversation
 
@@ -56,6 +56,9 @@ app.config['SECRET_KEY'] = flask_config['FLASK_SECRET_KEY']
 # In-memory storage for chat sessions
 chat_sessions = {}
 saved_sessions = set()
+
+# Initialize session manager with saved_sessions
+set_saved_sessions(saved_sessions)
 
 @app.route("/")
 def index():
@@ -141,6 +144,7 @@ def chat():
             success = save_session_to_sheets(session_id, chat_sessions[session_id]["email"], chat_sessions[session_id]["messages"], update_existing)
             if success and session_id not in saved_sessions:
                 saved_sessions.add(session_id)
+                set_saved_sessions(saved_sessions)  # Sync with session_manager
                 print(f"✅ Session {session_id} added to saved_sessions")
             elif success:
                 print(f"✅ Session {session_id} updated in Google Sheets")
@@ -305,6 +309,9 @@ def save_quote():
             try:
                 update_existing = session_id in saved_sessions
                 save_session_to_sheets(session_id, email, chat_sessions[session_id]["messages"], update_existing)
+                if session_id not in saved_sessions:
+                    saved_sessions.add(session_id)
+                    set_saved_sessions(saved_sessions)  # Sync with session_manager
                 print(f"✅ Google Sheets updated with latest session data for {session_id}")
             except Exception as sheet_error:
                 print(f"⚠️  Failed to update Google Sheets: {sheet_error}")

@@ -3,6 +3,18 @@ from environment import get_google_credentials, get_hubspot_config, get_dropbox_
 from chatbot.chatbot import build_conversation_text
 import gspread
 
+# Global variable to track saved sessions
+saved_sessions = set()
+
+def set_saved_sessions(sessions_set):
+    """Set the global saved_sessions from app.py"""
+    global saved_sessions
+    saved_sessions = sessions_set
+
+def get_saved_sessions():
+    """Get the current saved_sessions set"""
+    global saved_sessions
+    return saved_sessions
 
 # Google Sheets configuration
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']

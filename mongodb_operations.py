@@ -335,16 +335,38 @@ class MongoDBManager:
             return self._save_chat_session_locally(session_id, email, messages, phone_number)
         
         try:
-            # Check if session already exists in quotes collection
-            existing_session = self.quotes_collection.find_one({"session_id": session_id})
+            # First, check if a session already exists for this email
+            existing_session_by_email = self.quotes_collection.find_one({"email": email, "type": "chat_session"})
             
-            if existing_session:
-                # Update existing session with messages and phone number
+            if existing_session_by_email:
+                # Update existing session for this email
+                existing_session_id = existing_session_by_email.get("session_id")
+                
+                # Merge messages from both sessions (avoid duplicates)
+                existing_messages = existing_session_by_email.get("messages", [])
+                new_messages = messages
+                
+                # Create a set of message content to avoid duplicates
+                existing_content = set()
+                for msg in existing_messages:
+                    content_key = f"{msg.get('role', '')}:{msg.get('content', '')}"
+                    existing_content.add(content_key)
+                
+                # Add only new messages that don't already exist
+                merged_messages = existing_messages.copy()
+                for msg in new_messages:
+                    content_key = f"{msg.get('role', '')}:{msg.get('content', '')}"
+                    if content_key not in existing_content:
+                        merged_messages.append(msg)
+                        existing_content.add(content_key)
+                
+                # Update with merged data
                 update_data = {
+                    "session_id": session_id,  # Update to latest session_id
                     "email": email,
-                    "messages": messages,
+                    "messages": merged_messages,
                     "updated_at": datetime.now(),
-                    "message_count": len(messages),
+                    "message_count": len(merged_messages),
                     "type": "chat_session"
                 }
                 
@@ -353,38 +375,66 @@ class MongoDBManager:
                     update_data["phone_number"] = phone_number
                 
                 result = self.quotes_collection.update_one(
-                    {"session_id": session_id},
+                    {"email": email, "type": "chat_session"},
                     {"$set": update_data}
                 )
                 if result.modified_count > 0:
-                    print(f"✅ Chat session updated in quotes collection for session {session_id}")
-                    return {"success": True, "action": "updated", "session_id": session_id}
+                    print(f"✅ Chat session updated for email {email} (merged with existing session {existing_session_id})")
+                    return {"success": True, "action": "updated", "session_id": session_id, "email": email}
                 else:
-                    print(f"⚠️  No changes made to chat session for session {session_id}")
+                    print(f"⚠️  No changes made to chat session for email {email}")
                     return {"success": False, "error": "No changes made"}
             else:
-                # Create new session in quotes collection
-                session_doc = {
-                    "session_id": session_id,
-                    "email": email,
-                    "messages": messages,
-                    "created_at": datetime.now(),
-                    "updated_at": datetime.now(),
-                    "message_count": len(messages),
-                    "type": "chat_session"
-                }
+                # Check if session already exists by session_id (fallback)
+                existing_session = self.quotes_collection.find_one({"session_id": session_id})
                 
-                # Add phone number if provided
-                if phone_number:
-                    session_doc["phone_number"] = phone_number
-                
-                result = self.quotes_collection.insert_one(session_doc)
-                if result.inserted_id:
-                    print(f"✅ Chat session saved in quotes collection for session {session_id}")
-                    return {"success": True, "action": "created", "session_id": session_id}
+                if existing_session:
+                    # Update existing session with messages and phone number
+                    update_data = {
+                        "email": email,
+                        "messages": messages,
+                        "updated_at": datetime.now(),
+                        "message_count": len(messages),
+                        "type": "chat_session"
+                    }
+                    
+                    # Only update phone number if provided
+                    if phone_number:
+                        update_data["phone_number"] = phone_number
+                    
+                    result = self.quotes_collection.update_one(
+                        {"session_id": session_id},
+                        {"$set": update_data}
+                    )
+                    if result.modified_count > 0:
+                        print(f"✅ Chat session updated in quotes collection for session {session_id}")
+                        return {"success": True, "action": "updated", "session_id": session_id}
+                    else:
+                        print(f"⚠️  No changes made to chat session for session {session_id}")
+                        return {"success": False, "error": "No changes made"}
                 else:
-                    print(f"❌ Failed to save chat session for session {session_id}")
-                    return {"success": False, "error": "Failed to insert session"}
+                    # Create new session in quotes collection
+                    session_doc = {
+                        "session_id": session_id,
+                        "email": email,
+                        "messages": messages,
+                        "created_at": datetime.now(),
+                        "updated_at": datetime.now(),
+                        "message_count": len(messages),
+                        "type": "chat_session"
+                    }
+                    
+                    # Add phone number if provided
+                    if phone_number:
+                        session_doc["phone_number"] = phone_number
+                    
+                    result = self.quotes_collection.insert_one(session_doc)
+                    if result.inserted_id:
+                        print(f"✅ Chat session saved in quotes collection for session {session_id}")
+                        return {"success": True, "action": "created", "session_id": session_id}
+                    else:
+                        print(f"❌ Failed to save chat session for session {session_id}")
+                        return {"success": False, "error": "Failed to insert session"}
                     
         except Exception as e:
             print(f"❌ Error saving chat session to MongoDB: {e}")
@@ -453,6 +503,174 @@ class MongoDBManager:
             print(f"❌ Error getting chat session from MongoDB: {e}")
             print("   Falling back to local storage")
             return self._get_chat_session_locally(session_id)
+
+    def get_chat_session_by_email(self, email):
+        """Get chat session from MongoDB by email"""
+        if not self.connected:
+            return self._get_chat_session_by_email_locally(email)
+        
+        try:
+            session_data = self.quotes_collection.find_one({"email": email, "type": "chat_session"})
+            if session_data:
+                # Convert ObjectId to string for JSON serialization
+                session_data["_id"] = str(session_data["_id"])
+                return {"success": True, "session": session_data}
+            else:
+                return {"success": False, "error": "Session not found"}
+                
+        except Exception as e:
+            print(f"❌ Error getting chat session by email from MongoDB: {e}")
+            print("   Falling back to local storage")
+            return self._get_chat_session_by_email_locally(email)
+
+    def _get_chat_session_by_email_locally(self, email):
+        """Get chat session from local JSON file by email"""
+        try:
+            if not os.path.exists("chat_sessions"):
+                return {"success": False, "error": "Session not found"}
+            
+            for filename in os.listdir("chat_sessions"):
+                if filename.endswith('.json'):
+                    filepath = os.path.join("chat_sessions", filename)
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            session_data = json.load(f)
+                            if session_data.get("email") == email:
+                                return {"success": True, "session": session_data}
+                    except Exception as e:
+                        print(f"⚠️  Error reading {filename}: {e}")
+                        continue
+            
+            return {"success": False, "error": "Session not found"}
+                
+        except Exception as e:
+            print(f"❌ Error reading chat session by email locally: {e}")
+            return {"success": False, "error": str(e)}
+
+    def update_hubspot_contact_id_by_email(self, email, contact_id: str):
+        """Persist HubSpot contact_id for an email (Atlas or local fallback)"""
+        if not self.connected:
+            return self._update_hubspot_contact_id_by_email_locally(email, contact_id)
+        try:
+            result = self.quotes_collection.update_one(
+                {"email": email, "type": "chat_session"},
+                {"$set": {"hubspot_contact_id": contact_id, "updated_at": datetime.now()}},
+                upsert=True
+            )
+            if result.matched_count > 0 or result.upserted_id:
+                print(f"✅ HubSpot contact_id saved for email {email}")
+                return {"success": True}
+            return {"success": False, "error": "No document matched or upsert failed"}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot contact_id to MongoDB: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _update_hubspot_contact_id_by_email_locally(self, email, contact_id: str):
+        """Persist HubSpot contact_id locally by email"""
+        try:
+            os.makedirs("chat_sessions", exist_ok=True)
+            
+            # Find existing session file for this email
+            session_filename = None
+            for filename in os.listdir("chat_sessions"):
+                if filename.endswith('.json'):
+                    filepath = os.path.join("chat_sessions", filename)
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            if data.get("email") == email:
+                                session_filename = filename
+                                break
+                    except Exception:
+                        continue
+            
+            if session_filename:
+                filepath = os.path.join("chat_sessions", session_filename)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                data["hubspot_contact_id"] = contact_id
+                data["updated_at"] = datetime.now().isoformat()
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+                print(f"✅ HubSpot contact_id saved locally for email {email}")
+                return {"success": True}
+            else:
+                # Create new session file for this email
+                filename = f"chat_sessions/session_email_{email.replace('@', '_at_').replace('.', '_')}.json"
+                data = {
+                    "email": email,
+                    "hubspot_contact_id": contact_id,
+                    "updated_at": datetime.now().isoformat()
+                }
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+                print(f"✅ HubSpot contact_id saved locally for email {email}")
+                return {"success": True}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot contact_id locally: {e}")
+            return {"success": False, "error": str(e)}
+
+    def update_hubspot_last_sync_by_email(self, email, iso_timestamp: str):
+        """Record last HubSpot sync time for an email"""
+        if not self.connected:
+            return self._update_hubspot_last_sync_by_email_locally(email, iso_timestamp)
+        try:
+            result = self.quotes_collection.update_one(
+                {"email": email, "type": "chat_session"},
+                {"$set": {"hubspot_last_sync_at": iso_timestamp, "updated_at": datetime.now()}},
+                upsert=True
+            )
+            if result.matched_count > 0 or result.upserted_id:
+                print(f"✅ HubSpot last sync time saved for email {email}")
+                return {"success": True}
+            return {"success": False, "error": "Update failed"}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot last sync time: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _update_hubspot_last_sync_by_email_locally(self, email, iso_timestamp: str):
+        try:
+            os.makedirs("chat_sessions", exist_ok=True)
+            
+            # Find existing session file for this email
+            session_filename = None
+            for filename in os.listdir("chat_sessions"):
+                if filename.endswith('.json'):
+                    filepath = os.path.join("chat_sessions", filename)
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            if data.get("email") == email:
+                                session_filename = filename
+                                break
+                    except Exception:
+                        continue
+            
+            if session_filename:
+                filepath = os.path.join("chat_sessions", session_filename)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                data["hubspot_last_sync_at"] = iso_timestamp
+                data["updated_at"] = datetime.now().isoformat()
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+                print(f"✅ HubSpot last sync time saved locally for email {email}")
+                return {"success": True}
+            else:
+                # Create new session file for this email
+                filename = f"chat_sessions/session_email_{email.replace('@', '_at_').replace('.', '_')}.json"
+                data = {
+                    "email": email,
+                    "hubspot_last_sync_at": iso_timestamp,
+                    "updated_at": datetime.now().isoformat()
+                }
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+                print(f"✅ HubSpot last sync time saved locally for email {email}")
+                return {"success": True}
+        except Exception as e:
+            print(f"❌ Error saving HubSpot last sync time locally: {e}")
+            return {"success": False, "error": str(e)}
 
     def _save_chat_session_locally(self, session_id, email, messages, phone_number=None):
         """Save chat session to local JSON file"""

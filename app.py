@@ -32,19 +32,19 @@ openai_key = load_environment()
 # Initialize OpenAI Client
 client = OpenAI(api_key=openai_key)
 
-# Initialize ChromaDB
-collection = initialize_chromadb(openai_key)
+# # Initialize ChromaDB
+# collection = initialize_chromadb(openai_key)
 
-# Load and preprocess documents
-directory_path = "./data"
-documents = load_documents_from_directory(directory_path)
-chunked_documents = preprocess_documents(documents)
+# # Load and preprocess documents
+# directory_path = "./data"
+# documents = load_documents_from_directory(directory_path)
+# chunked_documents = preprocess_documents(documents)
 
-# Generate embeddings
-chunked_documents = generate_embeddings(client, chunked_documents)
+# # Generate embeddings
+# chunked_documents = generate_embeddings(client, chunked_documents)
 
-# Upsert documents into ChromaDB
-upsert_documents_into_db(collection, chunked_documents)
+# # Upsert documents into ChromaDB
+# upsert_documents_into_db(collection, chunked_documents)
 
 # Flask application setup
 app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -71,6 +71,18 @@ def chat():
     print("Message received:", user_message)
     print("Email:", email)
 
+    # Check if this session exists and has an email
+    if session_id in chat_sessions:
+        existing_email = chat_sessions[session_id].get("email")
+        if not existing_email and not email:
+            print(f"⚠️  Session {session_id} exists but has no email - treating as first message")
+        elif existing_email:
+            print(f"📧 Session {session_id} has existing email: {existing_email}")
+        elif email:
+            print(f"📧 New email provided for session {session_id}: {email}")
+    else:
+        print(f"🆕 New session {session_id} created")
+
  
     if session_id not in chat_sessions:
         chat_sessions[session_id] = {
@@ -95,8 +107,9 @@ def chat():
                 contact_id = upsert_result.get("contact_id")
                 chat_sessions[session_id]["hubspot_contact_id"] = contact_id
                 try:
-                    mongodb_manager.update_hubspot_contact_id(session_id, contact_id)
-                    print(f"✅ hubspot_contact_id stored for session {session_id}: {contact_id}")
+                    # Store contact_id by email instead of session_id
+                    mongodb_manager.update_hubspot_contact_id_by_email(current_email, contact_id)
+                    print(f"✅ hubspot_contact_id stored for email {current_email}: {contact_id}")
                 except Exception as e:
                     print(f"⚠️  Failed to store hubspot_contact_id in DB: {e}")
             else:
@@ -151,20 +164,37 @@ def chat():
 
         try:
             contact_id = None
+            current_email = chat_sessions[session_id].get("email")
+            
+            # First try to get contact_id from current session
             if session_id in chat_sessions:
                 contact_id = chat_sessions[session_id].get("hubspot_contact_id")
+            
+            # If not found in session, try to get from database by email
+            if not contact_id and current_email:
+                db_session = mongodb_manager.get_chat_session_by_email(current_email)
+                if db_session.get("success"):
+                    contact_id = db_session["session"].get("hubspot_contact_id")
+            
+            # If still not found, try by session_id as fallback
             if not contact_id:
-              
                 db_session = mongodb_manager.get_chat_session(session_id)
                 if db_session.get("success"):
                     contact_id = db_session["session"].get("hubspot_contact_id")
 
             if contact_id:
-              
+                # Get last sync time by email instead of session_id
                 last_sync_iso = None
-                db_session = mongodb_manager.get_chat_session(session_id)
-                if db_session.get("success"):
-                    last_sync_iso = db_session["session"].get("hubspot_last_sync_at")
+                if current_email:
+                    db_session = mongodb_manager.get_chat_session_by_email(current_email)
+                    if db_session.get("success"):
+                        last_sync_iso = db_session["session"].get("hubspot_last_sync_at")
+                
+                # Fallback to session-based sync time if email-based not found
+                if not last_sync_iso:
+                    db_session = mongodb_manager.get_chat_session(session_id)
+                    if db_session.get("success"):
+                        last_sync_iso = db_session["session"].get("hubspot_last_sync_at")
 
                 should_sync = True
                 if last_sync_iso:
@@ -179,7 +209,12 @@ def chat():
                     conv_text = build_conversation_text(chat_sessions[session_id]["messages"], session_id)
                     patch_result = hubspot_patch_conversation(contact_id, conv_text)
                     if patch_result.get("success"):
-                        mongodb_manager.update_hubspot_last_sync(session_id, datetime.utcnow().isoformat() + "Z")
+                        # Update sync time by email instead of session_id
+                        if current_email:
+                            mongodb_manager.update_hubspot_last_sync_by_email(current_email, datetime.utcnow().isoformat() + "Z")
+                        else:
+                            # Fallback to session-based sync time
+                            mongodb_manager.update_hubspot_last_sync(session_id, datetime.utcnow().isoformat() + "Z")
                     else:
                         print(f"⚠️  HubSpot sync skipped/failed: {patch_result.get('error')}")
         except Exception as sync_err:
@@ -223,8 +258,9 @@ def validate_email_endpoint():
                 chat_sessions[session_id]["email"] = email
                 chat_sessions[session_id]["hubspot_contact_id"] = contact_id
                 try:
-                    mongodb_manager.update_hubspot_contact_id(session_id, contact_id)
-                    print(f"✅ Saved hubspot_contact_id to MongoDB for session {session_id}")
+                    # Store contact_id by email instead of session_id
+                    mongodb_manager.update_hubspot_contact_id_by_email(email, contact_id)
+                    print(f"✅ Saved hubspot_contact_id to MongoDB for email {email}")
                 except Exception as db_err:
                     print(f"⚠️  Failed saving hubspot_contact_id to MongoDB: {db_err}")
 
@@ -386,7 +422,7 @@ def get_session_messages(session_id):
     print(f">>> Get session messages endpoint hit for session {session_id}")
     
     try:
-        
+        # First try to get session by session_id
         result = mongodb_manager.get_chat_session(session_id)
         
         if result["success"]:
@@ -413,6 +449,28 @@ def get_session_messages(session_id):
                 "message_count": len(messages)
             })
         else:
+            # If session_id not found, try to get by email from in-memory session
+            if session_id in chat_sessions and chat_sessions[session_id].get("email"):
+                email = chat_sessions[session_id]["email"]
+                print(f"🔍 Session {session_id} not found in DB, trying to load by email: {email}")
+                
+                # Try to get session by email
+                email_result = mongodb_manager.get_chat_session_by_email(email)
+                if email_result["success"]:
+                    session_data = email_result["session"]
+                    messages = session_data.get("messages", [])
+                    
+                    # Update in-memory session with data from email-based session
+                    chat_sessions[session_id]["messages"] = messages
+                    chat_sessions[session_id]["email"] = email
+                    
+                    return jsonify({
+                        "success": True,
+                        "messages": messages,
+                        "email": email,
+                        "message_count": len(messages)
+                    })
+            
             # Fallback to in-memory session
             if session_id in chat_sessions and "messages" in chat_sessions[session_id]:
                 messages = chat_sessions[session_id]["messages"]

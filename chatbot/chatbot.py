@@ -175,7 +175,7 @@ CURRENT SESSION EMAIL: NOT COLLECTED
 
 CONTEXT INSTRUCTIONS:
 1. CAREFULLY READ the full conversation history above.
-2. If this is the customer's FIRST message in the conversation, ALWAYS ask for email first.
+2. If this is the customer's FIRST message in the conversation OR if no email has been collected yet, ALWAYS ask for email first.
 3. If email is already collected, NEVER ask for it again - this is a CRITICAL rule.
 4. After email collection, ask "How can I help you with your sign needs today?"
 5. Handle order issues by collecting Order ID and phone number, then tell customer representative will contact them.
@@ -191,6 +191,7 @@ CONTEXT INSTRUCTIONS:
 15. CRITICAL: The email {email_value if email_value else 'has not been collected yet'} - use this information to determine if email collection is needed.
 16. CRITICAL: Email persists throughout the session - if customer says "bye" and then talks again, they still have the same email.
 17. CRITICAL: Only ask for email if this is a completely new session or if email was never collected.
+18. CRITICAL: If no email is available in the session, treat this as a first message and ask for email regardless of conversation history.
 """
 
     full_prompt = system_prompt + email_context + context_instructions + knowledge_context + conversation_context + f"\n\nCurrent User Message: {user_message}"

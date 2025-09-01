@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
 def load_environment():
-    load_dotenv()
     openai_key = os.getenv("OPENAI_API_KEY")
     if not openai_key:
         raise ValueError("OpenAI API key is missing in the environment variables.")
@@ -91,4 +93,15 @@ def get_hubspot_config():
     print(f"✅ HubSpot token loaded: {hubspot_token[:20]}...")
     return {
         'token': hubspot_token
+    }
+
+def get_redis_config():
+    """Get Redis configuration"""
+    return {
+        'REDIS_HOST': os.getenv('REDIS_HOST', 'redis-14653.c10.us-east-1-4.ec2.redns.redis-cloud.com'),
+        'REDIS_PORT': int(os.getenv('REDIS_PORT', '14653')),
+        'REDIS_DB': int(os.getenv('REDIS_DB', '0')),
+        'REDIS_PASSWORD': os.getenv('REDIS_PASSWORD'),
+        'REDIS_SSL': os.getenv('REDIS_SSL', 'false').lower() == 'true',
+        'REDIS_TIMEOUT': int(os.getenv('REDIS_TIMEOUT', '5'))
     }

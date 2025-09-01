@@ -25,6 +25,7 @@ from validations.validations import validate_email
 from session_manager.session_manager import save_session_to_sheets, set_saved_sessions, get_saved_sessions
 from chatbot.chatbot import build_conversation_text
 from hubspot.hubspot import create_hubspot_contact, hubspot_patch_conversation
+from performance_optimizer import fast_generator, async_save_to_sheets, async_save_to_mongodb, async_hubspot_sync, timing_decorator
 
 # Load environment variables
 openai_key = load_environment()
@@ -126,7 +127,8 @@ def chat():
     })
 
     try:
-        response = generate_sign_nize_response(client, user_message, chat_sessions[session_id])
+        # Use optimized response generator
+        response = fast_generator.generate_response(client, user_message, chat_sessions[session_id])
         quote_form_triggered = "[QUOTE_FORM_TRIGGER]" in response
         if quote_form_triggered:
             response = response.replace("[QUOTE_FORM_TRIGGER]", "")
@@ -138,18 +140,27 @@ def chat():
         
         message_count = len(chat_sessions[session_id]["messages"])
         
+        # Async operations for database and Google Sheets
         if chat_sessions[session_id].get("email"):
-            update_existing = session_id in saved_sessions
-            print(f"📊 Updating Google Sheets for session {session_id}: {message_count} messages, update_existing={update_existing}")
-            success = save_session_to_sheets(session_id, chat_sessions[session_id]["email"], chat_sessions[session_id]["messages"], update_existing)
-            if success and session_id not in saved_sessions:
-                saved_sessions.add(session_id)
-                set_saved_sessions(saved_sessions)  # Sync with session_manager
-                print(f"✅ Session {session_id} added to saved_sessions")
-            elif success:
-                print(f"✅ Session {session_id} updated in Google Sheets")
+            email = chat_sessions[session_id]["email"]
+            messages = chat_sessions[session_id]["messages"]
+            
+            # Run async operations in background
+            from concurrent.futures import ThreadPoolExecutor
+            executor = ThreadPoolExecutor(max_workers=3)
+            
+            # Async Google Sheets update
+            executor.submit(async_save_to_sheets, session_id, email, messages)
+            
+            # Async MongoDB save
+            executor.submit(async_save_to_mongodb, session_id, email, messages)
+            
+            # Async HubSpot sync
+            executor.submit(async_hubspot_sync, session_id, email, messages)
+            
+            print(f"🚀 Async operations started for session {session_id}")
         else:
-            print(f"⚠️  No email available for session {session_id}, skipping Google Sheets update")
+            print(f"⚠️  No email available for session {session_id}, skipping async updates")
         
         try:
             db_result = mongodb_manager.save_chat_session(

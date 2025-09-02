@@ -477,11 +477,13 @@ def get_session_messages(session_id):
                     chat_sessions[session_id]["messages"] = messages
                     chat_sessions[session_id]["email"] = email
                     
+                    # Do NOT send messages to frontend when loaded via email fallback.
+                    # Keep them only in server memory for bot context.
                     return jsonify({
                         "success": True,
-                        "messages": messages,
+                        "messages": [],
                         "email": email,
-                        "message_count": len(messages)
+                        "message_count": 0
                     })
             
             # Fallback to in-memory session

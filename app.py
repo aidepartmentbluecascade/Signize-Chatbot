@@ -99,6 +99,20 @@ def chat():
         
         if email:
             chat_sessions[session_id]["email"] = email
+            # If this is a new browser session but we already have history for this email,
+            # load it into memory NOW so the bot has context immediately (no refresh needed)
+            try:
+                if not chat_sessions[session_id]["messages"]:
+                    email_session = mongodb_manager.get_chat_session_by_email(email)
+                    if email_session.get("success"):
+                        prior = email_session["session"].get("messages", [])
+                        if prior:
+                            chat_sessions[session_id]["messages"] = prior
+                            # carry over hubspot ids/sync if present
+                            chat_sessions[session_id]["hubspot_contact_id"] = email_session["session"].get("hubspot_contact_id")
+                            print(f"📥 Loaded {len(prior)} prior messages into session {session_id} from email {email}")
+            except Exception as e:
+                print(f"⚠️  Failed loading prior messages by email for session {session_id}: {e}")
     
     try:
         current_email = chat_sessions[session_id].get("email")

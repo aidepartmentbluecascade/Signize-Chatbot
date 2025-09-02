@@ -87,9 +87,13 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
 
                 # Columns: A=session_id, B=email, C=timestamp, D=message_count, E=conversation, F=status
                 # Find existing row by email (column B)
+                normalized_target_email = (email or "").strip().lower()
                 for i, row_data in enumerate(all_values):
                     try:
-                        if row_data and len(row_data) > 1 and row_data[1] == email:
+                        if not row_data or len(row_data) <= 1:
+                            continue
+                        sheet_email = (row_data[1] or "").strip().lower()
+                        if sheet_email and sheet_email == normalized_target_email:
                             session_row = i + 1
                             break
                     except Exception:
@@ -105,7 +109,13 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                     if existing_conversation:
                         updated_conversation += "\n\n--- New Messages ---\n"
 
-                    existing_count = int(row_data[3]) if len(row_data) > 3 and str(row_data[3]).isdigit() else 0
+                    # Safely parse existing message count
+                    existing_count = 0
+                    if len(row_data) > 3:
+                        try:
+                            existing_count = int(str(row_data[3]).strip())
+                        except Exception:
+                            existing_count = 0
                     new_messages = chat_history[existing_count:]
 
                     # Build new conversation text with quote form data

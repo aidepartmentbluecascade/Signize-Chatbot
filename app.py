@@ -211,7 +211,8 @@ def chat():
 
                 if should_sync:
                     conv_text = build_conversation_text(chat_sessions[session_id]["messages"], session_id)
-                    patch_result = hubspot_patch_conversation(contact_id, conv_text)
+                    # Use append mode to preserve existing conversation history
+                    patch_result = hubspot_patch_conversation(contact_id, conv_text, append_mode=True)
                     if patch_result.get("success"):
                         # Update sync time by email instead of session_id
                         if current_email:
@@ -220,7 +221,12 @@ def chat():
                             # Fallback to session-based sync time
                             mongodb_manager.update_hubspot_last_sync(session_id, datetime.utcnow().isoformat() + "Z")
                     else:
-                        print(f"⚠️  HubSpot sync skipped/failed: {patch_result.get('error')}")
+                        error_msg = patch_result.get('error', 'Unknown error')
+                        if patch_result.get("property_missing"):
+                            print(f"⚠️  HubSpot sync failed: {error_msg}")
+                            print(f"💡 To fix this, create the '{patch_result.get('property_missing')}' property in HubSpot Settings → Properties")
+                        else:
+                            print(f"⚠️  HubSpot sync skipped/failed: {error_msg}")
         except Exception as sync_err:
             print(f"⚠️  HubSpot sync error: {sync_err}")
         return jsonify({

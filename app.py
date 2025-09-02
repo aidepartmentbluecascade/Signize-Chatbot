@@ -86,7 +86,49 @@ def chat():
     else:
         print(f"🆕 New session {session_id} created")
 
- 
+    # Priority 1: If email is provided, ensure we have a session for it
+    if email:
+        # Check if we have existing conversation history for this email
+        existing_session = mongodb_manager.get_chat_session_by_email(email)
+        if existing_session.get("success"):
+            existing_messages = existing_session["session"].get("messages", [])
+            existing_session_id = existing_session["session"].get("session_id")
+            
+            # If this is a new browser session, load the existing conversation
+            if session_id not in chat_sessions or not chat_sessions[session_id].get("messages"):
+                print(f"📥 Loading existing conversation for {email}: {len(existing_messages)} messages")
+                
+                # Initialize session with existing data
+                if session_id not in chat_sessions:
+                    chat_sessions[session_id] = {
+                        "messages": existing_messages,
+                        "context_history": [],
+                        "conversation_state": "initial",
+                        "customer_info": {},
+                        "email": email
+                    }
+                else:
+                    chat_sessions[session_id]["messages"] = existing_messages
+                    chat_sessions[session_id]["email"] = email
+                
+                # Carry over HubSpot contact ID if present
+                if existing_session["session"].get("hubspot_contact_id"):
+                    chat_sessions[session_id]["hubspot_contact_id"] = existing_session["session"]["hubspot_contact_id"]
+                    print(f"📎 Carried over HubSpot contact ID: {existing_session['session']['hubspot_contact_id']}")
+        
+        # Ensure session has email set
+        if session_id not in chat_sessions:
+            chat_sessions[session_id] = {
+                "messages": [],
+                "context_history": [],
+                "conversation_state": "initial",
+                "customer_info": {},
+                "email": email
+            }
+        else:
+            chat_sessions[session_id]["email"] = email
+    
+    # Priority 2: Initialize session if it doesn't exist
     if session_id not in chat_sessions:
         chat_sessions[session_id] = {
             "messages": [],
@@ -95,24 +137,20 @@ def chat():
             "customer_info": {},
             "email": email
         }
-    else:
-        
-        if email:
-            chat_sessions[session_id]["email"] = email
-            # If this is a new browser session but we already have history for this email,
-            # load it into memory NOW so the bot has context immediately (no refresh needed)
-            try:
-                if not chat_sessions[session_id]["messages"]:
-                    email_session = mongodb_manager.get_chat_session_by_email(email)
-                    if email_session.get("success"):
-                        prior = email_session["session"].get("messages", [])
-                        if prior:
-                            chat_sessions[session_id]["messages"] = prior
-                            # carry over hubspot ids/sync if present
-                            chat_sessions[session_id]["hubspot_contact_id"] = email_session["session"].get("hubspot_contact_id")
-                            print(f"📥 Loaded {len(prior)} prior messages into session {session_id} from email {email}")
-            except Exception as e:
-                print(f"⚠️  Failed loading prior messages by email for session {session_id}: {e}")
+    
+    # Priority 3: Load existing messages if session exists but no messages
+    if not chat_sessions[session_id].get("messages") and chat_sessions[session_id].get("email"):
+        try:
+            email_session = mongodb_manager.get_chat_session_by_email(chat_sessions[session_id]["email"])
+            if email_session.get("success"):
+                prior = email_session["session"].get("messages", [])
+                if prior:
+                    chat_sessions[session_id]["messages"] = prior
+                    # carry over hubspot ids/sync if present
+                    chat_sessions[session_id]["hubspot_contact_id"] = email_session["session"].get("hubspot_contact_id")
+                    print(f"📥 Loaded {len(prior)} prior messages into session {session_id} from email {chat_sessions[session_id]['email']}")
+        except Exception as e:
+            print(f"⚠️  Failed loading prior messages by email for session {session_id}: {e}")
     
     try:
         current_email = chat_sessions[session_id].get("email")
@@ -267,7 +305,6 @@ def validate_email_endpoint():
     is_valid = validate_email(email)
     
     if is_valid:
-        
         print(f"📧 Valid email detected - creating/updating HubSpot contact: {email}")
         hubspot_result = create_hubspot_contact(email)
 
@@ -276,21 +313,58 @@ def validate_email_endpoint():
             print(f"✅ HubSpot contact {hubspot_result['action']}: {email}")
             contact_id = hubspot_result.get("contact_id")
          
-            if session_id and contact_id:
-                if session_id not in chat_sessions:
-                    chat_sessions[session_id] = {"messages": [], "context_history": [], "conversation_state": "initial", "customer_info": {}, "email": email}
-                chat_sessions[session_id]["email"] = email
-                chat_sessions[session_id]["hubspot_contact_id"] = contact_id
-                try:
-                    # Store contact_id by email instead of session_id
-                    mongodb_manager.update_hubspot_contact_id_by_email(email, contact_id)
-                    print(f"✅ Saved hubspot_contact_id to MongoDB for email {email}")
-                except Exception as db_err:
-                    print(f"⚠️  Failed saving hubspot_contact_id to MongoDB: {db_err}")
+            # Generate a consistent session ID based on email (hash of email)
+            import hashlib
+            email_hash = hashlib.md5(email.encode()).hexdigest()[:8]
+            consistent_session_id = f"email_{email_hash}"
+            
+            # Check if we have existing conversation history for this email
+            existing_session = mongodb_manager.get_chat_session_by_email(email)
+            has_existing_history = False
+            existing_messages = []
+            
+            if existing_session.get("success"):
+                has_existing_history = True
+                existing_messages = existing_session["session"].get("messages", [])
+                print(f"📥 Found existing conversation history: {len(existing_messages)} messages for {email}")
+                
+                # Use the existing session_id if available, otherwise use consistent one
+                if existing_session["session"].get("session_id"):
+                    consistent_session_id = existing_session["session"].get("session_id")
+                    print(f"🔄 Using existing session_id: {consistent_session_id}")
+            
+            # Initialize or update the session in memory
+            if consistent_session_id not in chat_sessions:
+                chat_sessions[consistent_session_id] = {
+                    "messages": existing_messages,
+                    "context_history": [],
+                    "conversation_state": "initial",
+                    "customer_info": {},
+                    "email": email,
+                    "hubspot_contact_id": contact_id
+                }
+                print(f"🆕 Created new in-memory session {consistent_session_id} for {email}")
+            else:
+                # Update existing in-memory session
+                chat_sessions[consistent_session_id]["email"] = email
+                chat_sessions[consistent_session_id]["hubspot_contact_id"] = contact_id
+                if existing_messages and not chat_sessions[consistent_session_id]["messages"]:
+                    chat_sessions[consistent_session_id]["messages"] = existing_messages
+                    print(f"📥 Loaded existing messages into in-memory session {consistent_session_id}")
+            
+            try:
+                # Store contact_id by email instead of session_id
+                mongodb_manager.update_hubspot_contact_id_by_email(email, contact_id)
+                print(f"✅ Saved hubspot_contact_id to MongoDB for email {email}")
+            except Exception as db_err:
+                print(f"⚠️  Failed saving hubspot_contact_id to MongoDB: {db_err}")
 
             return jsonify({
                 "valid": True,
                 "message": "Valid email format",
+                "session_id": consistent_session_id,
+                "has_existing_history": has_existing_history,
+                "message_count": len(existing_messages),
                 "hubspot_contact": {
                     "action": hubspot_result.get("action"),
                     "contact_id": contact_id,
@@ -303,6 +377,9 @@ def validate_email_endpoint():
             return jsonify({
                 "valid": True,
                 "message": "Valid email format (HubSpot sync failed)",
+                "session_id": consistent_session_id,
+                "has_existing_history": has_existing_history,
+                "message_count": len(existing_messages),
                 "hubspot_error": hubspot_result.get("error")
             })
     
@@ -491,13 +568,14 @@ def get_session_messages(session_id):
                     chat_sessions[session_id]["messages"] = messages
                     chat_sessions[session_id]["email"] = email
                     
-                    # Do NOT send messages to frontend when loaded via email fallback.
-                    # Keep them only in server memory for bot context.
+                    # ✅ IMPORTANT: Now we DO send messages to frontend for returning users
+                    # This ensures conversation history is displayed
                     return jsonify({
                         "success": True,
-                        "messages": [],
+                        "messages": messages,  # ✅ Return the actual messages
                         "email": email,
-                        "message_count": 0
+                        "message_count": len(messages),
+                        "note": "Loaded conversation history by email"
                     })
             
             # Fallback to in-memory session

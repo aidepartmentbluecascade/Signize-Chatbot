@@ -360,9 +360,13 @@ class MongoDBManager:
                         merged_messages.append(msg)
                         existing_content.add(content_key)
                 
+                # ✅ IMPORTANT: Keep the existing session_id to maintain consistency
+                # Only update if the existing session_id is None or empty
+                update_session_id = existing_session_id if existing_session_id else session_id
+                
                 # Update with merged data
                 update_data = {
-                    "session_id": session_id,  # Update to latest session_id
+                    "session_id": update_session_id,  # ✅ Keep existing session_id if available
                     "email": email,
                     "messages": merged_messages,
                     "updated_at": datetime.now(),
@@ -380,7 +384,7 @@ class MongoDBManager:
                 )
                 if result.modified_count > 0:
                     print(f"✅ Chat session updated for email {email} (merged with existing session {existing_session_id})")
-                    return {"success": True, "action": "updated", "session_id": session_id, "email": email}
+                    return {"success": True, "action": "updated", "session_id": update_session_id, "email": email}
                 else:
                     print(f"⚠️  No changes made to chat session for email {email}")
                     return {"success": False, "error": "No changes made"}

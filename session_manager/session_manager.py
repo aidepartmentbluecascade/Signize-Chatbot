@@ -116,7 +116,14 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                             existing_count = int(str(row_data[3]).strip())
                         except Exception:
                             existing_count = 0
-                    new_messages = chat_history[existing_count:]
+                    # If the sheet's count is ahead of this session's count (new browser/session),
+                    # append the entire current session as new messages to avoid empty diffs.
+                    if existing_count >= len(chat_history):
+                        new_messages = chat_history
+                    else:
+                        new_messages = chat_history[existing_count:]
+                    # Compute the new total message count to store back in the sheet
+                    updated_message_count = existing_count + len(new_messages)
 
                     # Build new conversation text with quote form data
                     new_conversation_text = build_conversation_text(chat_history, session_id)
@@ -141,16 +148,33 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
 
                     # Preserve original session_id in column A for this email
                     original_session_id = row_data[0] if len(row_data) > 0 else session_data["session_id"]
-                    updated_row = [
-                        original_session_id,
-                        session_data["email"],
-                        session_data["timestamp"],
-                        session_data["message_count"],
-                        updated_conversation,
-                        session_data["status"]
-                    ]
 
-                    worksheet.update(f'A{session_row}:F{session_row}', [updated_row])
+                    # Respect existing sheet schema: if there's a 'Logo Info' column (column F), keep its value
+                    has_logo_info_col = len(row_data) >= 6  # columns are 1-indexed in sheet terms
+                    existing_logo_info = row_data[5] if has_logo_info_col else ""
+
+                    # Build updated row matching current schema
+                    if has_logo_info_col:
+                        updated_row = [
+                            original_session_id,
+                            session_data["email"],
+                            session_data["timestamp"],
+                            updated_message_count,
+                            updated_conversation,
+                            existing_logo_info,
+                            session_data["status"]
+                        ]
+                        worksheet.update(f'A{session_row}:G{session_row}', [updated_row])
+                    else:
+                        updated_row = [
+                            original_session_id,
+                            session_data["email"],
+                            session_data["timestamp"],
+                            updated_message_count,
+                            updated_conversation,
+                            session_data["status"]
+                        ]
+                        worksheet.update(f'A{session_row}:F{session_row}', [updated_row])
                     print(
                         f"✅ Email {email} updated in Google Sheets (row {session_row}) - {len(new_messages)} new messages added")
                     return True

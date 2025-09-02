@@ -76,17 +76,24 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
             session_data["status"]
         ]
 
-        if session_id in saved_sessions and update_existing:
+        # Update strategy: consolidate by email (single row per email)
+        # If a row exists for this email, update that row irrespective of session_id
+        if update_existing or True:
 
             try:
 
                 all_values = worksheet.get_all_values()
                 session_row = None
 
+                # Columns: A=session_id, B=email, C=timestamp, D=message_count, E=conversation, F=status
+                # Find existing row by email (column B)
                 for i, row_data in enumerate(all_values):
-                    if row_data and len(row_data) > 0 and row_data[0] == session_id:
-                        session_row = i + 1
-                        break
+                    try:
+                        if row_data and len(row_data) > 1 and row_data[1] == email:
+                            session_row = i + 1
+                            break
+                    except Exception:
+                        continue
 
                 if session_row:
 
@@ -98,7 +105,7 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
                     if existing_conversation:
                         updated_conversation += "\n\n--- New Messages ---\n"
 
-                    existing_count = int(row_data[3]) if len(row_data) > 3 and row_data[3].isdigit() else 0
+                    existing_count = int(row_data[3]) if len(row_data) > 3 and str(row_data[3]).isdigit() else 0
                     new_messages = chat_history[existing_count:]
 
                     # Build new conversation text with quote form data
@@ -122,8 +129,10 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
 
                     # Logo information is now handled in build_conversation_text function
 
+                    # Preserve original session_id in column A for this email
+                    original_session_id = row_data[0] if len(row_data) > 0 else session_data["session_id"]
                     updated_row = [
-                        session_data["session_id"],
+                        original_session_id,
                         session_data["email"],
                         session_data["timestamp"],
                         session_data["message_count"],
@@ -133,14 +142,14 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
 
                     worksheet.update(f'A{session_row}:F{session_row}', [updated_row])
                     print(
-                        f"✅ Session {session_id} updated in Google Sheets (row {session_row}) - {len(new_messages)} new messages added")
+                        f"✅ Email {email} updated in Google Sheets (row {session_row}) - {len(new_messages)} new messages added")
                     return True
                 else:
-                    print(f"⚠️  Session {session_id} not found in sheet, appending new row")
+                    print(f"⚠️  Email {email} not found in sheet, appending new row")
 
                     worksheet.append_row(row)
                     saved_sessions.add(session_id)
-                    print(f"✅ Session {session_id} appended to Google Sheets")
+                    print(f"✅ Email {email} appended to Google Sheets")
                     return True
 
             except Exception as update_error:
@@ -148,7 +157,7 @@ def save_session_to_sheets(session_id, email, chat_history, update_existing=Fals
 
                 worksheet.append_row(row)
                 saved_sessions.add(session_id)
-                print(f"✅ Session {session_id} appended to Google Sheets (fallback)")
+                print(f"✅ Email {email} appended to Google Sheets (fallback)")
                 return True
         else:
 

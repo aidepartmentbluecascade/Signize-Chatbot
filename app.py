@@ -102,14 +102,16 @@ def chat():
                 if session_id not in chat_sessions:
                     chat_sessions[session_id] = {
                         "messages": existing_messages,
-                        "context_history": [],
-                        "conversation_state": "initial",
+                        "context_history": existing_messages,  # ✅ Set context_history to existing messages
+                        "conversation_state": "returning_user" if existing_messages else "initial",  # ✅ Set proper state
                         "customer_info": {},
                         "email": email
                     }
                 else:
                     chat_sessions[session_id]["messages"] = existing_messages
+                    chat_sessions[session_id]["context_history"] = existing_messages  # ✅ Set context_history
                     chat_sessions[session_id]["email"] = email
+                    chat_sessions[session_id]["conversation_state"] = "returning_user" if existing_messages else "initial"  # ✅ Set proper state
                 
                 # Carry over HubSpot contact ID if present
                 if existing_session["session"].get("hubspot_contact_id"):
@@ -149,6 +151,9 @@ def chat():
                     # carry over hubspot ids/sync if present
                     chat_sessions[session_id]["hubspot_contact_id"] = email_session["session"].get("hubspot_contact_id")
                     print(f"📥 Loaded {len(prior)} prior messages into session {session_id} from email {chat_sessions[session_id]['email']}")
+                    print(f"🔄 Set conversation_state to 'returning_user' for session {session_id}")
+                    chat_sessions[session_id]["context_history"] = prior  # ✅ Set context_history
+                    chat_sessions[session_id]["conversation_state"] = "returning_user"  # ✅ Set proper state
         except Exception as e:
             print(f"⚠️  Failed loading prior messages by email for session {session_id}: {e}")
     
@@ -337,8 +342,8 @@ def validate_email_endpoint():
             if consistent_session_id not in chat_sessions:
                 chat_sessions[consistent_session_id] = {
                     "messages": existing_messages,
-                    "context_history": [],
-                    "conversation_state": "initial",
+                    "context_history": existing_messages,  # ✅ Set context_history to existing messages
+                    "conversation_state": "returning_user" if existing_messages else "initial",  # ✅ Set proper state
                     "customer_info": {},
                     "email": email,
                     "hubspot_contact_id": contact_id
@@ -538,13 +543,15 @@ def get_session_messages(session_id):
                 chat_sessions[session_id] = {
                     "messages": messages,
                     "email": email,
-                    "context_history": [],
-                    "conversation_state": "initial",
+                    "context_history": messages,  # ✅ Set context_history to messages
+                    "conversation_state": "returning_user" if messages else "initial",  # ✅ Set proper state
                     "customer_info": {}
                 }
             else:
                 chat_sessions[session_id]["messages"] = messages
                 chat_sessions[session_id]["email"] = email
+                chat_sessions[session_id]["context_history"] = messages  # ✅ Set context_history
+                chat_sessions[session_id]["conversation_state"] = "returning_user" if messages else "initial"  # ✅ Set proper state
             
             return jsonify({
                 "success": True,
@@ -567,6 +574,8 @@ def get_session_messages(session_id):
                     # Update in-memory session with data from email-based session
                     chat_sessions[session_id]["messages"] = messages
                     chat_sessions[session_id]["email"] = email
+                    chat_sessions[session_id]["context_history"] = messages  # ✅ Set context_history
+                    chat_sessions[session_id]["conversation_state"] = "returning_user" if messages else "initial"  # ✅ Set proper state
                     
                     # ✅ IMPORTANT: Now we DO send messages to frontend for returning users
                     # This ensures conversation history is displayed

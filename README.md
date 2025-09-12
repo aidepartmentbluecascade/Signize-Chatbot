@@ -22,7 +22,7 @@ A modern AI-powered customer support chatbot for Signize, specializing in custom
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ahmad272001/updated-chatbot.git
+   git clone https://github.com/aidepartmentbluecascade/Signize-Chatbot.git
    cd updated-chatbot
    ```
 
